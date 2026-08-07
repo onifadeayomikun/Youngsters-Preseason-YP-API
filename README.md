@@ -55,3 +55,13 @@ The server runs on `http://localhost:4000`.
 | GET | `/v1/players/:player` | Returns a player's profile and full season stats (supports partial name search) |
 
 ## Example Requests
+
+```
+GET /v1/clubs
+GET /v1/clubs/arsenal
+GET /v1/clubs/arsenal/preseason/2024-25
+GET /v1/seasons/2024-25
+GET /v1/players
+GET /v1/players/Ethan
+GET /v1/players/Nwaneri
+```
