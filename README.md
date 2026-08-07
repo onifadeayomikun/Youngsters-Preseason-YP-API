@@ -1,6 +1,6 @@
 # YP API — Youngsters Preseason API
 
-A RESTful API built with Node.js and Express that tracks young footballers' preseason appearances across the Big Six English Premier League clubs (for now). It provides data on player profiles, preseason appearances by season, and club information — allowing anyone to query by club, season, or individual player name.
+A RESTful API built with Node.js and Express that tracks young footballers across the Big Six English Premier League clubs (for now). It provides data on player profiles, preseason appearances by season, and club information — allowing anyone to query by club, season, or individual player name.
 
 ## Tech Stack
 
