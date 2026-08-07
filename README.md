@@ -26,21 +26,37 @@ API Endpoints
 Clubs
 Method	Endpoint	Description
 GET	/v1/clubs	Returns all clubs
+
 GET	/v1/clubs/:club	Returns a specific club by name
+
 GET	/v1/clubs/:club/preseason/:season	Returns a club's preseason youngsters for a given season
+
 Seasons
+
 Method	Endpoint	Description
+
 GET	/v1/seasons/:season	Returns preseason data across all clubs for a given season
+
 Players
+
 Method	Endpoint	Description
+
 GET	/v1/players	Returns all players
+
 GET	/v1/players/:player	Returns a player's profile and full season stats (supports partial name search)
+
 Example Requests
 
 GET /v1/clubs
+
 GET /v1/clubs/arsenal
+
 GET /v1/clubs/arsenal/preseason/2024-25
+
 GET /v1/seasons/2024-25
+
 GET /v1/players
+
 GET /v1/players/Ethan
+
 GET /v1/players/Nwaneri
