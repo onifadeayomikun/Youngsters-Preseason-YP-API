@@ -91,7 +91,7 @@ app.get("/v1/players/:player", (req, res) => {
 });
 app.post("/v1/clubs", (req, res) => {
     clubLastId++;
-    playerLastId++;
+    playerLastId;
     const newClub = {
         id: clubLastId,
         name: req.body.name,
@@ -103,6 +103,7 @@ app.post("/v1/clubs", (req, res) => {
             season: season.season,
 
             youngsters: season.youngsters.map(player => {
+                req.body.name 
                 playerLastId++;
 
                 return {

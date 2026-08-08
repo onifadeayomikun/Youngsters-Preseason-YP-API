@@ -1,0 +1,11 @@
+[33mcommit 85068425d55a995edf1e2b8949b4a352b921627f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Onifade Ayomikun <onifadeayomikun@gmail.com>
+Date:   Sat Aug 8 09:05:43 2026 +0100
+
+    feat: add POST /v1/clubs endpoint and update IDs in data.js
+
+[33mcommit c456473e490663caaee416dd66f01eb330874ef2[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: Onifade Ayomikun <onifadeayomikun@gmail.com>
+Date:   Fri Aug 7 15:44:02 2026 +0100
+
+    Initial Commit
