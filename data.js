@@ -10,22 +10,22 @@ export const clubs = [
       {
         season: "2022-23",
         youngsters: [
-          { player: "Ethan Nwaneri", playerId: 101, age: 17, appearances: 0 },
-          { player: "Lewis Skelly", playerId: 102, age: 19, appearances: 24 }
+          { player: "Ethan Nwaneri", playerId: 1001, age: 17, appearances: 0 },
+          { player: "Lewis Skelly", playerId: 1002, age: 19, appearances: 24 }
         ]
       },
       {
         season: "2023-24",
         youngsters: [
-          { player: "Ethan Nwaneri", playerId: 101, age: 18, appearances: 12 },
-          { player: "Butler Oyedeji", playerId: 103, age: 19, appearances: 31 }
+          { player: "Ethan Nwaneri", playerId: 1001, age: 18, appearances: 12 },
+          { player: "Butler Oyedeji", playerId: 1003, age: 19, appearances: 31 }
         ]
       },
       {
         season: "2024-25",
         youngsters: [
-          { player: "Ethan Nwaneri", playerId: 101, age: 19, appearances: 35 },
-          { player: "Max Dowman", playerId: 104, age: 18, appearances: 8 }
+          { player: "Ethan Nwaneri", playerId: 1001, age: 19, appearances: 35 },
+          { player: "Max Dowman", playerId: 1004, age: 18, appearances: 8 }
         ]
       }
     ]
@@ -42,15 +42,15 @@ export const clubs = [
       {
         season: "2023-24",
         youngsters: [
-          { player: "Lewis Hall", playerId: 105, age: 18, appearances: 15 },
-          { player: "Levi Colwill", playerId: 106, age: 20, appearances: 47 }
+          { player: "Lewis Hall", playerId: 1005, age: 18, appearances: 15 },
+          { player: "Levi Colwill", playerId: 1006, age: 20, appearances: 47 }
         ]
       },
       {
         season: "2024-25",
         youngsters: [
-          { player: "Lewis Hall", playerId: 105, age: 19, appearances: 28 },
-          { player: "Alfie Gilchrist", playerId: 107, age: 18, appearances: 3 }
+          { player: "Lewis Hall", playerId: 1005, age: 19, appearances: 28 },
+          { player: "Alfie Gilchrist", playerId: 1007, age: 18, appearances: 3 }
         ]
       }
     ]
@@ -67,15 +67,15 @@ export const clubs = [
       {
         season: "2023-24",
         youngsters: [
-          { player: "Trey Nyoni", playerId: 108, age: 18, appearances: 5 },
-          { player: "Jarell Quansah", playerId: 109, age: 20, appearances: 62 }
+          { player: "Trey Nyoni", playerId: 1008, age: 18, appearances: 5 },
+          { player: "Jarell Quansah", playerId: 1009, age: 20, appearances: 62 }
         ]
       },
       {
         season: "2024-25",
         youngsters: [
-          { player: "Trey Nyoni", playerId: 108, age: 19, appearances: 22 },
-          { player: "Coalim Keheller", playerId: 110, age: 18, appearances: 0 }
+          { player: "Trey Nyoni", playerId: 1008, age: 19, appearances: 22 },
+          { player: "Coalim Keheller", playerId: 1010, age: 18, appearances: 0 }
         ]
       }
     ]
@@ -85,7 +85,7 @@ export const clubs = [
 
 export const players = [
   {
-    id: 101,
+    id: 1001,
     player: "Ethan Nwaneri",
     nationality: "England",
     position: "Midfielder",
@@ -93,7 +93,7 @@ export const players = [
   },
 
   {
-    id: 102,
+    id: 1002,
     player: "Lewis Skelly",
     nationality: "England",
     position: "Midfielder",
@@ -101,7 +101,7 @@ export const players = [
   },
 
   {
-    id: 103,
+    id: 1003,
     player: "Butler Oyedeji",
     nationality: "England",
     position: "Forward",
@@ -109,7 +109,7 @@ export const players = [
   },
 
   {
-    id: 104,
+    id: 1004,
     player: "Max Dowman",
     nationality: "England",
     position: "Forward",
@@ -117,7 +117,7 @@ export const players = [
   },
 
   {
-    id: 105,
+    id: 1005,
     player: "Lewis Hall",
     nationality: "England",
     position: "Defender",
@@ -125,7 +125,7 @@ export const players = [
   },
 
   {
-    id: 106,
+    id: 1006,
     player: "Levi Colwill",
     nationality: "England",
     position: "Defender",
@@ -133,7 +133,7 @@ export const players = [
   },
 
   {
-    id: 107,
+    id: 1007,
     player: "Alfie Gilchrist",
     nationality: "England",
     position: "Defender",
@@ -141,7 +141,7 @@ export const players = [
   },
 
   {
-    id: 108,
+    id: 1008,
     player: "Trey Nyoni",
     nationality: "England",
     position: "Forward",
@@ -149,7 +149,7 @@ export const players = [
   },
 
   {
-    id: 109,
+    id: 1009,
     player: "Jarell Quansah",
     nationality: "England",
     position: "Defender",
@@ -157,7 +157,7 @@ export const players = [
   },
 
   {
-    id: 110,
+    id: 1010,
     player: "Coalim Keheller",
     nationality: "England",
     position: "Goalkeeper",

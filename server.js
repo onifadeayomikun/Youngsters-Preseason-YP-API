@@ -4,6 +4,9 @@ import { clubs, players } from "./data.js";
 const app = express();
 const port = 4000;
 
+let clubLastId = clubs.length;
+let playerLastId = players.length + 1000;
+
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -62,15 +65,14 @@ app.get("/v1/players", (req, res) => {
 
 app.get("/v1/players/:player", (req, res) => {
     const player = req.params.player;
-    const foundPlayers = players.filter((p) => p.player.toLowerCase().includes(player.toLowerCase()));
+    const foundPlayer = players.filter((p) => p.player.toLowerCase().includes(player.toLowerCase()));
 
-    if (foundPlayers.length === 0) {
+    if (foundPlayer.length === 0) {
         return res.status(404).json({ error: "Player not found" });
     }
 
-    // Enrich each player with their season stats from the clubs array
-    const enrichedPlayers = foundPlayers.map((p) => {
-        const seasons = clubs.flatMap((club) =>
+    const enrichedPlayer = foundPlayer.map((p) => {
+        const seasons = clubs.flatMap((club) => 
             club.preseason.flatMap((season) =>
                 season.youngsters
                     .filter((y) => y.playerId === p.id)
@@ -85,7 +87,35 @@ app.get("/v1/players/:player", (req, res) => {
         return { ...p, seasons };
     });
 
-    res.json(enrichedPlayers);
+    res.json(enrichedPlayer);
+});
+app.post("/v1/clubs", (req, res) => {
+    clubLastId++;
+    playerLastId++;
+    const newClub = {
+        id: clubLastId,
+        name: req.body.name,
+        slang: req.body.slang,
+        country: req.body.country,
+        city: req.body.city,
+        seasonsAvailable: req.body.seasonsAvailable,
+        preseason: req.body.preseason.map(season => ({
+            season: season.season,
+
+            youngsters: season.youngsters.map(player => {
+                playerLastId++;
+
+                return {
+                    player: player.player,
+                    playerId: playerLastId,
+                    age: player.age,
+                    appearances: player.appearances
+                };
+            })
+        }))
+    };
+    clubs.push(newClub);
+    res.status(201).json(clubs);  
 });
 
 app.listen(port, () => {
