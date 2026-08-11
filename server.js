@@ -12,6 +12,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/v1/clubs", (req, res) => {
+    if (!clubs) {
+        return res.status(404).json({ error: "Clubs not found" });
+    }    
     res.json(clubs);
 });
 
@@ -60,83 +63,149 @@ app.get("/v1/seasons/:season", (req, res) => {
 });
 
 app.get("/v1/players", (req, res) => {
-    res.json(players)
+    if (!players) {
+        return res.status(404).json({ error: "Players not found" });
+    } 
+    res.json(players);   
 });
 
 app.get("/v1/players/:player", (req, res) => {
     const player = req.params.player;
     const foundPlayer = players.filter((p) => p.player.toLowerCase().includes(player.toLowerCase()));
 
-    if (foundPlayer.length === 0) {
+    if (!Array.isArray(foundPlayer) || foundPlayer.length === 0) {
         return res.status(404).json({ error: "Player not found" });
     }
+    try {
+        const enrichedPlayer = foundPlayer.map((p) => {
+            const seasons = clubs.flatMap((club) => 
+                club.preseason.flatMap((season) =>
+                    season.youngsters
+                        .filter((y) => y.playerId === p.id)
+                        .map((y) => ({
+                            club: club.name,
+                            season: season.season,
+                            age: y.age,
+                            appearances: y.appearances
+                        }))
+                )
+            );
+            return { ...p, seasons };
+        });
 
-    const enrichedPlayer = foundPlayer.map((p) => {
-        const seasons = clubs.flatMap((club) => 
-            club.preseason.flatMap((season) =>
-                season.youngsters
-                    .filter((y) => y.playerId === p.id)
-                    .map((y) => ({
-                        club: club.name,
-                        season: season.season,
-                        age: y.age,
-                        appearances: y.appearances
-                    }))
-            )
-        );
-        return { ...p, seasons };
-    });
+        res.json(enrichedPlayer);
+    } catch (error) {
+       console.error("Could not enrich player data: ", error);
+       return res.status(500).json({ error: "Unable to receive player data"}); 
+    }
 
-    res.json(enrichedPlayer);
 });
 app.post("/v1/clubs", (req, res) => {
-    const newClubPlayers = [];
-    clubLastId++;
-    const newClub = {
-        id: clubLastId,
-        name: req.body.name,
-        slang: req.body.slang,
-        country: req.body.country,
-        city: req.body.city,
-        seasonsAvailable: req.body.seasonsAvailable,
-        preseason: req.body.preseason.map(season => ({
-            season: season.season,
+    try {
+        const { name, slang, country, city, seasonsAvailable, preseason } = req.body;
 
-            youngsters: season.youngsters.map(player => {
-                const existingPlayer = players.find(p => p.player === player.player);
-                if (existingPlayer) {
-                    return {
+        if (!name || !country || !city) {
+            return res.status(400).json({
+                error: "name, country, and city are required",
+            });
+        }
+
+        if (!Array.isArray(preseason)) {
+            return res.status(400).json({
+                error: "preseason must be an array",
+            });
+        }
+
+        for (const season of preseason) {
+            if (!season.season || !Array.isArray(season.youngsters)) {
+                return res.status(400).json({
+                    error: "Each preseason entry needs a season and a youngsters array",
+                });
+            }
+
+        for (const player of season.youngsters) {
+            if (!player.player || typeof player.player !== "string") {
+                return res.status(400).json({
+                    error: "Every youngster needs a valid player name",
+                });
+            }
+
+            if (
+                typeof player.age !== "number" ||
+                !Number.isFinite(player.age) ||
+                player.age < 0 || player.age > 100
+            ) {
+                return res.status(400).json({
+                    error: "Players ages must be valid numbers between 0 and 100",
+                });
+            }
+
+            if (
+                typeof player.appearances !== "number" ||
+                !Number.isInteger(player.appearances) ||
+                player.appearances < 0
+            ) {
+                return res.status(400).json({
+                    error: "Players appearances must be a non-negative integer",
+                });
+            }
+}
+        }       
+        const newClubPlayers = [];
+        clubLastId++;
+        const newClub = {
+            id: clubLastId,
+            name: req.body.name,
+            slang: req.body.slang,
+            country: req.body.country,
+            city: req.body.city,
+            seasonsAvailable: req.body.seasonsAvailable,
+            preseason: req.body.preseason.map(season => ({
+                season: season.season,
+
+                youngsters: season.youngsters.map(player => {
+                    const existingPlayer = players.find(p => p.player === player.player);
+                    if (existingPlayer) {
+                        return {
+                            player: player.player,
+                            playerId: existingPlayer.id,
+                            age: player.age,
+                            appearances: player.appearances
+                        };
+                    }
+
+                    const alreadyAddedPlayer = newClubPlayers.find(p => p.player === player.player);
+                    if(alreadyAddedPlayer) {
+                        return {
+                            player: player.player,
+                            playerId: alreadyAddedPlayer.playerId,
+                            age: player.age,
+                            appearances: player.appearances
+                        };
+                    }
+
+                    playerLastId++;
+                    const newPlayer = {
                         player: player.player,
-                        playerId: existingPlayer.id,
+                        playerId: playerLastId,
                         age: player.age,
                         appearances: player.appearances
                     };
-                }
-
-                const alreadyAddedPlayer = newClubPlayers.find(p => p.player === player.player);
-                if(alreadyAddedPlayer) {
-                    return {
-                        player: player.player,
-                        playerId: alreadyAddedPlayer.playerId,
-                        age: player.age,
-                        appearances: player.appearances
-                    };
-                }
-
-                playerLastId++;
-                const newPlayer = {
-                    player: player.player,
-                    playerId: playerLastId,
-                    age: player.age,
-                    appearances: player.appearances
-                };
-                newClubPlayers.push(newPlayer);
-                return newPlayer;
-            })
-        }))
-    };
-    clubs.push(newClub);
-    res.status(201).json(clubs);  
+                    newClubPlayers.push(newPlayer);
+                    players.push(...newClubPlayers);
+                    return newPlayer;
+                })
+            }))
+        };
+        clubs.push(newClub);
+        res.status(201).json(newClub);
+            
+    } catch (error) {
+      console.error("Error creating club: ", error);
+      return res.status(500).json({ 
+        error: "An unexpected error occured while creating club",
+     });  
+    }       
 });
 
 app.post("/v1/clubs/:club/preseason/:season",(req, res) => {
