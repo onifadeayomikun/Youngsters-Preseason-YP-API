@@ -215,7 +215,7 @@ app.post("/v1/clubs", (req, res) => {
                         playerId: newPlayer.id,    
                         age: player.age,
                         appearances: player.appearances
-};
+                    };
                 })
             }))
         };
@@ -232,7 +232,49 @@ app.post("/v1/clubs", (req, res) => {
 });
 
 app.post("/v1/clubs/:club/preseason/:season",(req, res) => {
-    const clubName = req.params.club;  
+    const clubName = req.body.club;
+    const newSeason = {
+            preseason: req.body.preseason.map(season => ({
+                season: season.season,
+
+                youngsters: season.youngsters.map(player => {
+                    const existingPlayer = players.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
+                    if (existingPlayer) {
+                        return {
+                            player: player.player,
+                            playerId: existingPlayer.id,
+                            age: player.age,
+                            appearances: player.appearances
+                        };
+                    }
+
+                    const alreadyAddedPlayer = newClubPlayers.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
+                    if(alreadyAddedPlayer) {
+                        return {
+                            player: player.player,
+                            playerId: alreadyAddedPlayer.id ,
+                            age: player.age,
+                            appearances: player.appearances
+                        };
+                    }
+
+                    playerLastId++;
+                    const newPlayer = {
+                        player: player.player,
+                        id: playerLastId,
+                        age: player.age,
+                        appearances: player.appearances
+                    };
+                    newClubPlayers.push(newPlayer);
+                    return {
+                        player: player.player,
+                        playerId: newPlayer.id,    
+                        age: player.age,
+                        appearances: player.appearances
+                    };
+                })
+            }))
+    }  
 });
 
 app.listen(port, () => {
