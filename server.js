@@ -52,7 +52,7 @@ app.get("/v1/clubs/:club/preseason/:season", (req, res) => {
 app.get("/v1/seasons/:season", (req, res) => {
   const season = req.params.season;
 
- const allSeasons = clubs.flatMap((club) => club.preseason).filter((p) => p.season === season);
+  const allSeasons = clubs.flatMap((club) => club.preseason).filter((p) => p.season === season);
 
 
   if (allSeasons.length === 0) {
@@ -101,6 +101,14 @@ app.get("/v1/players/:player", (req, res) => {
 
 });
 app.post("/v1/clubs", (req, res) => {
+    function normalizePlayerName(name) {
+        return name
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") 
+            .trim()
+            .replace(/\s+/g, " ")
+            .toLowerCase();            
+    }
     try {
         const { name, slang, country, city, seasonsAvailable, preseason } = req.body;
 
@@ -113,6 +121,16 @@ app.post("/v1/clubs", (req, res) => {
         if (!Array.isArray(preseason)) {
             return res.status(400).json({
                 error: "preseason must be an array",
+            });
+        }
+        if (typeof slang !== "string") {
+            return res.status(400).json({
+                error: "Slang must be a string"
+            });
+        }
+        if (typeof seasonsAvailable != "number" || !Number.isInteger(seasonsAvailable) || seasonsAvailable < 0) {
+            return res.status(400).json({
+                error: "Seasons Available must be a non-negative integer",
             });
         }
 
@@ -164,7 +182,7 @@ app.post("/v1/clubs", (req, res) => {
                 season: season.season,
 
                 youngsters: season.youngsters.map(player => {
-                    const existingPlayer = players.find(p => p.player === player.player);
+                    const existingPlayer = players.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
                     if (existingPlayer) {
                         return {
                             player: player.player,
@@ -174,11 +192,11 @@ app.post("/v1/clubs", (req, res) => {
                         };
                     }
 
-                    const alreadyAddedPlayer = newClubPlayers.find(p => p.player === player.player);
+                    const alreadyAddedPlayer = newClubPlayers.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
                     if(alreadyAddedPlayer) {
                         return {
                             player: player.player,
-                            playerId: alreadyAddedPlayer.playerId,
+                            playerId: alreadyAddedPlayer.id ,
                             age: player.age,
                             appearances: player.appearances
                         };
@@ -187,16 +205,21 @@ app.post("/v1/clubs", (req, res) => {
                     playerLastId++;
                     const newPlayer = {
                         player: player.player,
-                        playerId: playerLastId,
+                        id: playerLastId,
                         age: player.age,
                         appearances: player.appearances
                     };
                     newClubPlayers.push(newPlayer);
-                    players.push(...newClubPlayers);
-                    return newPlayer;
+                    return {
+                        player: player.player,
+                        playerId: newPlayer.id,    
+                        age: player.age,
+                        appearances: player.appearances
+};
                 })
             }))
         };
+        players.push(...newClubPlayers);
         clubs.push(newClub);
         res.status(201).json(newClub);
             
