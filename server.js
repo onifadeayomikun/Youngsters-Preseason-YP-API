@@ -90,8 +90,8 @@ app.get("/v1/players/:player", (req, res) => {
     res.json(enrichedPlayer);
 });
 app.post("/v1/clubs", (req, res) => {
+    const newClubPlayers = [];
     clubLastId++;
-    playerLastId;
     const newClub = {
         id: clubLastId,
         name: req.body.name,
@@ -103,20 +103,44 @@ app.post("/v1/clubs", (req, res) => {
             season: season.season,
 
             youngsters: season.youngsters.map(player => {
-                req.body.name 
-                playerLastId++;
+                const existingPlayer = players.find(p => p.player === player.player);
+                if (existingPlayer) {
+                    return {
+                        player: player.player,
+                        playerId: existingPlayer.id,
+                        age: player.age,
+                        appearances: player.appearances
+                    };
+                }
 
-                return {
+                const alreadyAddedPlayer = newClubPlayers.find(p => p.player === player.player);
+                if(alreadyAddedPlayer) {
+                    return {
+                        player: player.player,
+                        playerId: alreadyAddedPlayer.playerId,
+                        age: player.age,
+                        appearances: player.appearances
+                    };
+                }
+
+                playerLastId++;
+                const newPlayer = {
                     player: player.player,
                     playerId: playerLastId,
                     age: player.age,
                     appearances: player.appearances
                 };
+                newClubPlayers.push(newPlayer);
+                return newPlayer;
             })
         }))
     };
     clubs.push(newClub);
     res.status(201).json(clubs);  
+});
+
+app.post("/v1/clubs/:club/preseason/:season",(req, res) => {
+    const clubName = req.params.club;  
 });
 
 app.listen(port, () => {
