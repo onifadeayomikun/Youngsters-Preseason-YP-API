@@ -31,6 +31,20 @@ nodemon server.js
 
 The server runs on `http://localhost:4000`.
 
+### Player identity matching
+
+`POST /v1/clubs` matches incoming `youngsters[].player` names against
+existing players using a normalized string comparison (case-insensitive,
+whitespace-collapsed, diacritic-stripped).
+
+**Known limitation:** name matching is a heuristic, not a guaranteed unique
+identifier. Two distinct real players who share the same name will be
+treated as the same player and assigned the same `playerId`. If your data
+requires reliable distinction between same-named players, this endpoint's
+identity resolution is not sufficient on its own — consider providing
+additional identifying information (e.g. date of birth, nationality) or
+contact us about supporting an external ID field.
+
 ## API Endpoints
 
 ### Clubs
