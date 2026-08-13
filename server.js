@@ -236,7 +236,9 @@ app.post("/v1/clubs", (req, res) => {
 app.post("/v1/clubs/:club/preseason",(req, res) => {
     try {
         const clubName = req.params.club;
+        console.log(clubName);
         const foundClub = clubs.find((club) => club.name.toLowerCase() === clubName.toLowerCase());
+        console.log(foundClub);
         if (!foundClub) {
             return res.status(404).json({
                 error: "Club does not exist"
@@ -333,7 +335,7 @@ app.post("/v1/clubs/:club/preseason/:season", (req, res) => {
         const club = req.params.club;
         const season = req.params.season;
         const youngsters = req.body.youngsters;
-        
+
         const foundClub = clubs.find((c) => c.name.toLowerCase() === club.toLowerCase());
         if (!foundClub) {
             return res.status(404).json({
@@ -393,7 +395,45 @@ app.post("/v1/clubs/:club/preseason/:season", (req, res) => {
             error: "An unexpected error occured while creating a new player profile "
         })
     }
-})
+});
+
+app.patch("/v1/clubs/:club", (req, res) => {
+    try {
+        const club = req.params.club;
+        const existingClub = clubs.find((c) => c.name.toLowerCase() === club.toLowerCase());
+            if (!existingClub) {
+                return res.status(404).json({
+                    error: "Club does not exist"
+                })
+            }
+        const updatedClub = {
+            id: existingClub.id,
+            name: req.body.name || existingClub.name,
+            slang: req.body.slang || existingClub.slang,
+            country: req.body.country || existingClub.country,
+            city: req.body.city || existingClub.city,
+            seasonsAvailable: req.body.seasonsAvailable || existingClub.seasonsAvailable,
+            preseason: [
+              {
+                season: req.body.season || existingClub.preseason.season,
+                youngsters: [
+                    {player: req.body.player || existingClub.preseason.youngsters.player, playerId: existingClub.preseason.youngsters.playerId, age: req.body.age || existingClub.preseason.youngsters.age, appearances: req.body.appearances || existingClub.preseason.youngsters.appearances,}
+                ] || existingClub.preseason.youngsters
+              }
+            ] || existingClub.preseason
+        };
+        const searchIndex = clubs.findIndex((c) => c.name.toLocaleLowerCase() === club.toLocaleLowerCase()); 
+        if (searchIndex === -1) {
+            return res.status(404).json({ error: "Club does not exist" });
+        }
+        clubs[searchIndex] = updatedClub;
+        res.status(200).json(clubs);       
+    } catch (error) {
+        return res.status(500).json({
+            error: "An unexpected error occured while updating the club profile"
+        })
+    }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
