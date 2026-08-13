@@ -7,9 +7,19 @@ const port = 4000;
 let clubLastId = clubs.length;
 let playerLastId = players.length + 1000;
 
+
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+function normalizePlayerName(name) {
+    return name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();            
+}
 
 app.get("/v1/clubs", (req, res) => {
     if (!clubs) {
@@ -101,14 +111,6 @@ app.get("/v1/players/:player", (req, res) => {
 
 });
 app.post("/v1/clubs", (req, res) => {
-    function normalizePlayerName(name) {
-        return name
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") 
-            .trim()
-            .replace(/\s+/g, " ")
-            .toLowerCase();            
-    }
     try {
         const { name, slang, country, city, seasonsAvailable, preseason } = req.body;
 
@@ -231,50 +233,99 @@ app.post("/v1/clubs", (req, res) => {
     }       
 });
 
-app.post("/v1/clubs/:club/preseason/:season",(req, res) => {
-    const clubName = req.body.club;
-    const newSeason = {
-            preseason: req.body.preseason.map(season => ({
-                season: season.season,
+app.post("/v1/clubs/:club/preseason",(req, res) => {
+    try {
+        const clubName = req.params.club;
+        const foundClub = clubs.find((club) => club.name.toLowerCase() === clubName.toLowerCase());
+        if (!foundClub) {
+            return res.status(404).json({
+                error: "Club does not exist"
+            })
+        }
 
-                youngsters: season.youngsters.map(player => {
-                    const existingPlayer = players.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
-                    if (existingPlayer) {
-                        return {
-                            player: player.player,
-                            playerId: existingPlayer.id,
-                            age: player.age,
-                            appearances: player.appearances
-                        };
-                    }
+        const preseason  = req.body.preseason;
+        if (!Array.isArray(preseason)) {
+            return res.status(400).json({
+                error: "preseason must be an array",
+            });
+        }
+        for (const season of preseason) {
+            if (!season.season || !Array.isArray(season.youngsters)) {
+                return res.status(400).json({
+                    error: "Each preseason entry needs a season and a youngsters array",
+                });
+            }
 
-                    const alreadyAddedPlayer = newClubPlayers.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
-                    if(alreadyAddedPlayer) {
-                        return {
-                            player: player.player,
-                            playerId: alreadyAddedPlayer.id ,
-                            age: player.age,
-                            appearances: player.appearances
-                        };
-                    }
+            for (const player of season.youngsters) {
+                if (!player.player || typeof player.player !== "string") {
+                    return res.status(400).json({
+                        error: "Every youngster needs a valid player name",
+                    });
+                }
 
-                    playerLastId++;
-                    const newPlayer = {
-                        player: player.player,
-                        id: playerLastId,
-                        age: player.age,
-                        appearances: player.appearances
-                    };
-                    newClubPlayers.push(newPlayer);
-                    return {
-                        player: player.player,
-                        playerId: newPlayer.id,    
-                        age: player.age,
-                        appearances: player.appearances
-                    };
-                })
-            }))
-    }  
+                if ( typeof player.age !== "number" || !Number.isFinite(player.age) || player.age < 0 || player.age > 100 ) {
+                    return res.status(400).json({
+                        error: "Players ages must be valid numbers between 0 and 100",
+                    });
+                }
+
+                if (typeof player.appearances !== "number" || !Number.isInteger(player.appearances) || player.appearances < 0) {
+                    return res.status(400).json({
+                        error: "Players appearances must be a non-negative integer",
+                    });
+                }
+            }
+        }  
+        
+        const newSeasonPlayers = [];
+        const newSeason = preseason.map(season => ({ season: season.season, youngsters: season.youngsters.map(player => {
+            const existingPlayer = players.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
+            if (existingPlayer) {
+                return {
+                    player: player.player,
+                    playerId: existingPlayer.id,
+                    age: player.age,
+                    appearances: player.appearances
+                };
+            }
+
+            const alreadyAddedPlayer = newSeasonPlayers.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
+            if(alreadyAddedPlayer) {
+                return {
+                    player: player.player,
+                    playerId: alreadyAddedPlayer.id ,
+                    age: player.age,
+                    appearances: player.appearances
+                };
+            }
+
+            playerLastId++;
+            const newPlayer = {
+                player: player.player,
+                id: playerLastId,
+                age: player.age,
+                appearances: player.appearances
+            };
+            newSeasonPlayers.push(newPlayer);
+            return {
+                player: player.player,
+                playerId: newPlayer.id,    
+                age: player.age,
+                appearances: player.appearances
+            };
+            })
+        }));
+        players.push(...newSeasonPlayers);
+        foundClub.preseason.push(...newSeason);
+        foundClub.seasonsAvailable = foundClub.preseason.length;
+        return res.status(201).json(newSeason);
+            
+    } catch (error) {
+        console.error("Error adding preason:", error);
+        return res.status(500).json({
+            error: "An unexpected error occured while creating a new season"
+        });
+    }    
 });
 
 app.listen(port, () => {
