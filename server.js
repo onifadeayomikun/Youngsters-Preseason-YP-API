@@ -328,6 +328,73 @@ app.post("/v1/clubs/:club/preseason",(req, res) => {
     }    
 });
 
+app.post("/v1/clubs/:club/preseason/:season", (req, res) => {
+    try {
+        const club = req.params.club;
+        const season = req.params.season;
+        const youngsters = req.body.youngsters;
+        
+        const foundClub = clubs.find((c) => c.name.toLowerCase() === club.toLowerCase());
+        if (!foundClub) {
+            return res.status(404).json({
+                error: "Club does not exist"
+            })
+        }       
+        const arrayIndex = foundClub.preseason.findIndex((s) => s.season === season );
+        if (!arrayIndex) {
+            return res.status(404).json({
+                error: "Club Season does not exist"
+            })
+        } 
+        const newPlayers = [];
+        const newYoungster = youngsters.map(player => {
+            const existingPlayer = players.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
+            if (existingPlayer) {
+                return {
+                    player: player.player,
+                    playerId: existingPlayer.id,
+                    age: player.age,
+                    appearances: player.appearances
+                };
+            }
+
+            const alreadyAddedPlayer = newPlayers.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
+            if(alreadyAddedPlayer) {
+                return {
+                    player: player.player,
+                    playerId: alreadyAddedPlayer.id ,
+                    age: player.age,
+                    appearances: player.appearances
+                };
+            }
+
+            playerLastId++;
+            const newPlayer = {
+                player: player.player,
+                id: playerLastId,
+                age: player.age,
+                appearances: player.appearances
+            };
+            newPlayers.push(newPlayer);
+            return {
+                player: player.player,
+                playerId: newPlayer.id,    
+                age: player.age,
+                appearances: player.appearances
+            };
+        });
+        players.push(...newPlayers);
+        foundClub.preseason[arrayIndex].youngsters.push(...newYoungster);
+        return res.status(201).json(newYoungster);       
+
+    } catch (error) {
+        console.error("Error adding player:", error);
+        return res.status(500).json({
+            error: "An unexpected error occured while creating a new player profile "
+        })
+    }
+})
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

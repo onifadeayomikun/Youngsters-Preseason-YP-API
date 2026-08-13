@@ -1,3 +1,4 @@
+//Data in Preaseason array is incorrect 
 export const clubs = [
   {
     id: 1,
