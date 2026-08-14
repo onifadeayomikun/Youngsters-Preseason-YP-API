@@ -399,39 +399,101 @@ app.post("/v1/clubs/:club/preseason/:season", (req, res) => {
 
 app.patch("/v1/clubs/:club", (req, res) => {
     try {
-        const club = req.params.club;
-        const existingClub = clubs.find((c) => c.name.toLowerCase() === club.toLowerCase());
-            if (!existingClub) {
-                return res.status(404).json({
-                    error: "Club does not exist"
-                })
-            }
-        const updatedClub = {
-            id: existingClub.id,
-            name: req.body.name || existingClub.name,
-            slang: req.body.slang || existingClub.slang,
-            country: req.body.country || existingClub.country,
-            city: req.body.city || existingClub.city,
-            seasonsAvailable: req.body.seasonsAvailable || existingClub.seasonsAvailable,
-            preseason: [
-              {
-                season: req.body.season || existingClub.preseason.season,
-                youngsters: [
-                    {player: req.body.player || existingClub.preseason.youngsters.player, playerId: existingClub.preseason.youngsters.playerId, age: req.body.age || existingClub.preseason.youngsters.age, appearances: req.body.appearances || existingClub.preseason.youngsters.appearances,}
-                ] || existingClub.preseason.youngsters
-              }
-            ] || existingClub.preseason
-        };
-        const searchIndex = clubs.findIndex((c) => c.name.toLocaleLowerCase() === club.toLocaleLowerCase()); 
-        if (searchIndex === -1) {
-            return res.status(404).json({ error: "Club does not exist" });
+        const clubName = req.params.club;
+        const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === clubName.toLowerCase());
+
+        if (clubIndex === -1) {
+            return res.status(404).json({
+                error: "Club does not exist"
+            });
         }
-        clubs[searchIndex] = updatedClub;
-        res.status(200).json(clubs);       
+
+        const existingClub = clubs[clubIndex];
+
+        const updatedClub = {
+            ...existingClub,
+            ...(req.body.name !== undefined ? { name: req.body.name } : {}),
+            ...(req.body.slang !== undefined ? { slang: req.body.slang } : {}),
+            ...(req.body.country !== undefined ? { country: req.body.country } : {}),
+            ...(req.body.city !== undefined ? { city: req.body.city } : {}),
+            ...(req.body.seasonsAvailable !== undefined ? { seasonsAvailable: req.body.seasonsAvailable } : {})
+        };
+
+        if (req.body.season) {
+            const seasonIndex = existingClub.preseason.findIndex((p) => p.season === req.body.season);
+
+            if (seasonIndex === -1) {
+                return res.status(404).json({
+                    error: `No preseason entry found for season ${req.body.season}`
+                });
+            }
+
+            if (!req.body.player) {
+                return res.status(400).json({
+                    error: "Player name is required when updating a youngster"
+                });
+            }
+
+            const youngsterIndex = existingClub.preseason[seasonIndex].youngsters.findIndex(
+                (y) => normalizePlayerName(y.player) === normalizePlayerName(req.body.player)
+            );
+
+            if (youngsterIndex === -1) {
+                return res.status(404).json({
+                    error: `No youngster found with player name ${req.body.player}`
+                });
+            }
+
+            const currentYoungster = existingClub.preseason[seasonIndex].youngsters[youngsterIndex];
+            const updatedYoungster = {
+                ...currentYoungster,
+                ...(req.body.player !== undefined ? { player: req.body.player } : {}),
+                ...(req.body.age !== undefined ? { age: req.body.age } : {}),
+                ...(req.body.appearances !== undefined ? { appearances: req.body.appearances } : {})
+            };
+
+            if (
+                typeof updatedYoungster.age !== "number" || !Number.isFinite(updatedYoungster.age) ||
+                updatedYoungster.age < 0 || updatedYoungster.age > 100
+            ) {
+                return res.status(400).json({
+                    error: "Players ages must be valid numbers between 0 and 100"
+                });
+            }
+
+            if (
+                typeof updatedYoungster.appearances !== "number" || !Number.isInteger(updatedYoungster.appearances) || 
+                updatedYoungster.appearances < 0
+            ) {
+                return res.status(400).json({
+                    error: "Players appearances must be a non-negative integer"
+                });
+            }
+
+            const updatedPreseason = existingClub.preseason.map((preseasonItem, index) => {
+                if (index !== seasonIndex) {
+                    return preseasonItem;
+                }
+
+                return {
+                    ...preseasonItem,
+                    youngsters: preseasonItem.youngsters.map((youngster, youngsterPos) =>
+                        youngsterPos === youngsterIndex ? updatedYoungster : youngster
+                    )
+                };
+            });
+
+            updatedClub.preseason = updatedPreseason;
+        }
+
+        clubs[clubIndex] = updatedClub;
+        return res.status(200).json(updatedClub);
+
     } catch (error) {
+        console.error("Error updating club profile:", error);
         return res.status(500).json({
             error: "An unexpected error occured while updating the club profile"
-        })
+        });
     }
 });
 
