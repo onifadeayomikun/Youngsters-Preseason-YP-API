@@ -398,104 +398,147 @@ app.post("/v1/clubs/:club/preseason/:season", (req, res) => {
 });
 
 app.patch("/v1/clubs/:club", (req, res) => {
+  try {
+    const clubName = req.params.club;
+    const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === clubName.toLowerCase());
+
+    if (clubIndex === -1) {
+      return res.status(404).json({ error: "Club does not exist" });
+    }
+
+    const existingClub = clubs[clubIndex];
+
+    const updatedClub = {
+      ...existingClub,
+      ...(req.body.name !== undefined ? { name: req.body.name } : {}),
+      ...(req.body.slang !== undefined ? { slang: req.body.slang } : {}),
+      ...(req.body.country !== undefined ? { country: req.body.country } : {}),
+      ...(req.body.city !== undefined ? { city: req.body.city } : {}),
+      ...(req.body.seasonsAvailable !== undefined ? { seasonsAvailable: req.body.seasonsAvailable } : {})
+    };
+
+    clubs[clubIndex] = updatedClub;
+    return res.status(200).json(clubs[clubIndex]);
+
+  } catch (error) {
+    console.error("Error updating club profile: ", error);
+    return res.status(500).json({ error: "An unexpected error occurred while updating the club profile" });
+  }
+});
+
+app.patch("/v1/clubs/:club/preseason/:season", (req, res) => {
+  try {
+    const { club, season } = req.params;
+
+    const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === club.toLowerCase());
+    if (clubIndex === -1) {
+      return res.status(404).json({ error: "Club does not exist" });
+    }
+
+    const existingClub = clubs[clubIndex];
+    const existingPreseason = existingClub.preseason ?? [];
+
+    const seasonIndex = existingPreseason.findIndex((p) => p.season === season);
+    if (seasonIndex === -1) {
+      return res.status(404).json({ error: `No preseason entry found for season ${season}` });
+    }
+
+    const currentSeasonEntry = existingPreseason[seasonIndex];
+
+    if (existingPreseason.some(p => p.season === req.body.season)) {
+        return res.status(404).json({ error: "Cannot have two seasons with the same value" });
+    }
+    const updatedSeasonEntry = {
+      ...currentSeasonEntry,
+      ...(req.body.season !== undefined ? { season: req.body.season } : {})
+    };
+
+    const updatedPreseason = [...existingPreseason];
+    updatedPreseason[seasonIndex] = updatedSeasonEntry;
+
+    clubs[clubIndex] = {
+      ...existingClub,
+      preseason: updatedPreseason
+    };
+
+    return res.status(200).json(clubs[clubIndex]);
+
+  } catch (error) {
+    console.error("Error updating preseason entry: ", error);
+    return res.status(500).json({ error: "An unexpected error occurred while updating the preseason entry" });
+  }
+});
+
+app.patch("/v1/clubs/:club/preseason/:season/youngsters/:player", (req, res) => {
+  try {
+    const { club, season, player } = req.params;
+
+    const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === club.toLowerCase());
+    if (clubIndex === -1) {
+      return res.status(404).json({ error: "Club does not exist" });
+    }
+
+    const existingClub = clubs[clubIndex];
+    const existingPreseason = existingClub.preseason ?? [];
+
+    const seasonIndex = existingPreseason.findIndex((p) => p.season === season);
+    if (seasonIndex === -1) {
+      return res.status(404).json({ error: `No preseason entry found for season ${season}` });
+    }
+
+    const existingYoungsters = existingPreseason[seasonIndex].youngsters ?? [];
+    const youngsterIndex = existingYoungsters.findIndex((y) => normalizePlayerName(y.player).includes(normalizePlayerName(player)));
+
+    if (youngsterIndex === -1) {
+      return res.status(404).json({ error: `No youngster found with player name ${player}` });
+    }
+
+    const currentYoungster = existingYoungsters[youngsterIndex];
+    const updatedYoungsters = [...existingYoungsters];
+    updatedYoungsters[youngsterIndex] = {
+      ...currentYoungster,
+      ...(req.body.player != undefined ? { player: req.body.player } : {}),
+      ...(req.body.age !== undefined ? { age: req.body.age } : {}),
+      ...(req.body.appearances !== undefined ? { appearances: req.body.appearances } : {})
+    };
+
+    const updatedPreseason = [...existingPreseason];
+    updatedPreseason[seasonIndex] = {
+      ...existingPreseason[seasonIndex],
+      youngsters: updatedYoungsters
+    };
+
+    clubs[clubIndex] = {
+      ...existingClub,
+      preseason: updatedPreseason
+    };
+
+    return res.status(200).json(clubs[clubIndex]);
+
+  } catch (error) {
+    console.error("Error updating youngster: ", error);
+    return res.status(500).json({ error: "An unexpected error occurred while updating the youngster" });
+  }
+});
+app.delete("/v1/clubs/:club", (req, res) => {
     try {
         const clubName = req.params.club;
         const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === clubName.toLowerCase());
-
         if (clubIndex === -1) {
-            return res.status(404).json({
-                error: "Club does not exist"
-            });
+            return res.status(404).json({ error: "Club does not exist" });
         }
 
-        const existingClub = clubs[clubIndex];
-
-        const updatedClub = {
-            ...existingClub,
-            ...(req.body.name !== undefined ? { name: req.body.name } : {}),
-            ...(req.body.slang !== undefined ? { slang: req.body.slang } : {}),
-            ...(req.body.country !== undefined ? { country: req.body.country } : {}),
-            ...(req.body.city !== undefined ? { city: req.body.city } : {}),
-            ...(req.body.seasonsAvailable !== undefined ? { seasonsAvailable: req.body.seasonsAvailable } : {})
-        };
-
-        if (req.body.season) {
-            const seasonIndex = existingClub.preseason.findIndex((p) => p.season === req.body.season);
-
-            if (seasonIndex === -1) {
-                return res.status(404).json({
-                    error: `No preseason entry found for season ${req.body.season}`
-                });
-            }
-
-            if (!req.body.player) {
-                return res.status(400).json({
-                    error: "Player name is required when updating a youngster"
-                });
-            }
-
-            const youngsterIndex = existingClub.preseason[seasonIndex].youngsters.findIndex(
-                (y) => normalizePlayerName(y.player) === normalizePlayerName(req.body.player)
-            );
-
-            if (youngsterIndex === -1) {
-                return res.status(404).json({
-                    error: `No youngster found with player name ${req.body.player}`
-                });
-            }
-
-            const currentYoungster = existingClub.preseason[seasonIndex].youngsters[youngsterIndex];
-            const updatedYoungster = {
-                ...currentYoungster,
-                ...(req.body.player !== undefined ? { player: req.body.player } : {}),
-                ...(req.body.age !== undefined ? { age: req.body.age } : {}),
-                ...(req.body.appearances !== undefined ? { appearances: req.body.appearances } : {})
-            };
-
-            if (
-                typeof updatedYoungster.age !== "number" || !Number.isFinite(updatedYoungster.age) ||
-                updatedYoungster.age < 0 || updatedYoungster.age > 100
-            ) {
-                return res.status(400).json({
-                    error: "Players ages must be valid numbers between 0 and 100"
-                });
-            }
-
-            if (
-                typeof updatedYoungster.appearances !== "number" || !Number.isInteger(updatedYoungster.appearances) || 
-                updatedYoungster.appearances < 0
-            ) {
-                return res.status(400).json({
-                    error: "Players appearances must be a non-negative integer"
-                });
-            }
-
-            const updatedPreseason = existingClub.preseason.map((preseasonItem, index) => {
-                if (index !== seasonIndex) {
-                    return preseasonItem;
-                }
-
-                return {
-                    ...preseasonItem,
-                    youngsters: preseasonItem.youngsters.map((youngster, youngsterPos) =>
-                        youngsterPos === youngsterIndex ? updatedYoungster : youngster
-                    )
-                };
-            });
-
-            updatedClub.preseason = updatedPreseason;
-        }
-
-        clubs[clubIndex] = updatedClub;
-        return res.status(200).json(updatedClub);
-
+        if (clubIndex > -1) {
+            clubs.splice(clubIndex, 1);
+            return res.status(200).json(clubs);
+        } 
+           
     } catch (error) {
-        console.error("Error updating club profile:", error);
-        return res.status(500).json({
-            error: "An unexpected error occured while updating the club profile"
-        });
-    }
+        console.error("Error deleting club: ", error);
+        res.status(400).json({ error: "An unexpected error occurred while deleting the Club profile" });
+    }    
 });
+app.delete("")
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
