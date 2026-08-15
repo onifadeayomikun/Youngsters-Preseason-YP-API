@@ -1,16 +1,17 @@
 import express from "express";
 import pg from "pg";
-import { clubs, players } from "./data.js";
+// import { clubs, players } from "./data.js";
+import env from "dotenv"
 
 const app = express();
 const port = 4000;
 
 const db = new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "YP",
-  password: "mikun2005",
-  port: 5432,
+  user: process.env.PG_USER,
+  host: process.env.PG_HOST,
+  database: process.env.PG_DATABASE,
+  password: process.env.PG_PASSWORD,
+  port: process.env.PG_PORT,
 });
 db.connect();
 
@@ -32,6 +33,7 @@ function normalizePlayerName(name) {
 }
 
 app.get("/v1/clubs", (req, res) => {
+    const clubs = await db.query("SELECT * FROM clubs"); //Need to merge all tables to get the full data and it has not be done
     if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
     }    
