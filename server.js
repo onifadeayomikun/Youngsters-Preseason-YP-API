@@ -1,8 +1,18 @@
 import express from "express";
+import pg from "pg";
 import { clubs, players } from "./data.js";
 
 const app = express();
 const port = 4000;
+
+const db = new pg.Client({
+  user: "postgres",
+  host: "localhost",
+  database: "YP",
+  password: "mikun2005",
+  port: 5432,
+});
+db.connect();
 
 let clubLastId = clubs.length;
 let playerLastId = players.length + 1000;
