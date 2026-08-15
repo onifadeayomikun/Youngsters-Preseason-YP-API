@@ -538,7 +538,35 @@ app.delete("/v1/clubs/:club", (req, res) => {
         res.status(400).json({ error: "An unexpected error occurred while deleting the Club profile" });
     }    
 });
-app.delete("")
+app.delete("/v1/clubs/:club/preseason/:season/youngsters/:player", (req, res) => {
+    try {
+        const { club, season, player } = req.params;
+        const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === club.toLowerCase());
+        if (clubIndex === -1) {
+            return res.status(404).json({ error: "Club does not exist" });
+        }
+
+        const seasonIndex = clubs[clubIndex].preseason.findIndex((c) => c.season === season);
+        if (seasonIndex === -1) {
+            return res.status(404).json({ error: `No preseason entry found for season ${season}` });
+        }
+
+        const currentYoungster = clubs[clubIndex].preseason[seasonIndex]
+        const youngsterIndex = currentYoungster.youngsters.findIndex((y) => normalizePlayerName(y.player).includes(normalizePlayerName(player)));
+        if (youngsterIndex === -1) {
+            return res.status(404).json({ error: `No youngster found with player name ${player}` });
+        }
+
+        if (youngsterIndex > -1) {
+            currentYoungster.youngsters.splice(youngsterIndex, 1);
+            return res.status(200).json(clubs);
+        } 
+           
+    } catch (error) {
+        console.error("Error deleting player: ", error);
+        res.status(500).json({ error: "An unexpected error occurred while deleting the player profile" });
+    }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
