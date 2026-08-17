@@ -32,7 +32,7 @@ function normalizePlayerName(name) {
         .toLowerCase();            
 }
 
-app.get("/v1/clubs", (req, res) => {
+app.get("/v1/clubs", async (req, res) => {
     const clubs = await db.query("SELECT * FROM clubs"); //Need to merge all tables to get the full data and it has not be done
     if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
@@ -85,6 +85,7 @@ app.get("/v1/seasons/:season", (req, res) => {
 });
 
 app.get("/v1/players", (req, res) => {
+     const players = await db.query("SELECT * FROM players");
     if (!players) {
         return res.status(404).json({ error: "Players not found" });
     } 
