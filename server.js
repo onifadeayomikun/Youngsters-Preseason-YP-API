@@ -32,6 +32,16 @@ function normalizePlayerName(name) {
         .toLowerCase();            
 }
 
+async function checkVisisted() {
+  const result = await db.query("SELECT country_code FROM visited_countries WHERE users_id = $1", [currentUserId]);
+  let countries = [];
+  result.rows.forEach((country) => {
+    countries.push(country.country_code);
+  });
+  return countries;
+}
+
+
 app.get("/v1/clubs", async (req, res) => {
     const clubs = await db.query("SELECT * FROM clubs"); //Need to merge all tables to get the full data and it has not be done
     if (!clubs) {
