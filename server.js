@@ -32,18 +32,14 @@ function normalizePlayerName(name) {
         .toLowerCase();            
 }
 
-async function checkVisisted() {
-  const result = await db.query("SELECT country_code FROM visited_countries WHERE users_id = $1", [currentUserId]);
-  let countries = [];
-  result.rows.forEach((country) => {
-    countries.push(country.country_code);
-  });
-  return countries;
-}
 
-
-app.get("/v1/clubs", async (req, res) => {
-    const clubs = await db.query("SELECT * FROM clubs"); //Need to merge all tables to get the full data and it has not be done
+app.get("/v1/clubs", async (req, res) => {const clubs = await db.query(`
+  SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
+  players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
+  FROM player_season_stats
+  FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
+  FULL JOIN players ON player_season_stats.player_id = players.player_id
+  FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id;`);
     if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
     }    
@@ -94,7 +90,7 @@ app.get("/v1/seasons/:season", (req, res) => {
   res.json(allSeasons);
 });
 
-app.get("/v1/players", (req, res) => {
+app.get("/v1/players", async (req, res) => {
      const players = await db.query("SELECT * FROM players");
     if (!players) {
         return res.status(404).json({ error: "Players not found" });
