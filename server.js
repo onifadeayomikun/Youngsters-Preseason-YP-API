@@ -1,7 +1,6 @@
 import express from "express";
 import pg from "pg";
 import dotenv from "dotenv";
-// import { clubs, players } from "./data.js";
 
 dotenv.config();
 
@@ -21,10 +20,6 @@ db.connect().catch((error) => {
  process.exit(1);
 });
 
-// let clubLastId = clubs.length;
-// let playerLastId = players.length + 1000;
-
-
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,7 +33,6 @@ function normalizePlayerName(name) {
         .toLowerCase();            
 }
 
-
 app.get("/v1/clubs", async (req, res) => {
     const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
     players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
@@ -49,7 +43,7 @@ app.get("/v1/clubs", async (req, res) => {
         if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
     }    
-    res.json(clubs);
+    res.json(clubs.rows);
 });
 
 app.get("/v1/clubs/:club", async (req, res) => {
@@ -93,9 +87,7 @@ app.get("/v1/clubs/:club/preseason/:season", async (req, res) => {
         FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
         FULL JOIN players ON player_season_stats.player_id = players.player_id
         FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id
-        WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2;
-    `, [clubName, season]);
-
+        WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2;`, [clubName, season]);
     if (!foundSeason.rows || foundSeason.rows.length === 0) {
       return res.status(404).json({ error: "Season not found" });
     }
@@ -107,56 +99,52 @@ app.get("/v1/clubs/:club/preseason/:season", async (req, res) => {
   }
 });
 
-app.get("/v1/seasons/:season", (req, res) => {
+app.get("/v1/seasons/:season", async (req, res) => {
   const season = req.params.season;
+    
+  const allSeasons = await db.query(
+    `SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label,
+    players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
+    FROM player_season_stats
+    FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id 
+    FULL JOIN players ON player_season_stats.player_id = players.player_id
+    FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id
+    WHERE seasons.season_label = $1;`, [season]);
 
-  const allSeasons = clubs.flatMap((club) => club.preseason).filter((p) => p.season === season);
-
-
-  if (allSeasons.length === 0) {
+  if (!allSeasons.rows || allSeasons.rows.length === 0) {
     return res.status(404).json({ error: "Season(s) not found" });
   }
 
-  res.json(allSeasons);
+  res.json(allSeasons.rows);
 });
 
 app.get("/v1/players", async (req, res) => {
-     const players = await db.query("SELECT * FROM players");
-    if (!players) {
+     const players = await db.query(`
+        SELECT DISTINCT players.player_name, players.position, players.nationality, clubs.name AS club_name
+        FROM player_season_stats
+        JOIN clubs ON player_season_stats.club_id = clubs.club_id 
+        JOIN players ON player_season_stats.player_id = players.player_id
+        ORDER BY clubs.name;`);
+    if (!players.rows || players.rows.length === 0) {
         return res.status(404).json({ error: "Players not found" });
     } 
-    res.json(players);   
+    res.json(players.rows);   
 });
 
-app.get("/v1/players/:player", (req, res) => {
+app.get("/v1/players/:player", async (req, res) => {
     const player = req.params.player;
-    const foundPlayer = players.filter((p) => p.player.toLowerCase().includes(player.toLowerCase()));
+    const foundPlayer = await db.query(`
+        SELECT DISTINCT players.player_id, players.player_name, players.position, players.nationality, clubs.name AS club_name
+        FROM player_season_stats
+        JOIN clubs ON player_season_stats.club_id = clubs.club_id 
+        JOIN players ON player_season_stats.player_id = players.player_id
+        WHERE lower(players.player_name) LIKE '%' || lower($1) || '%';`, [player]);
 
-    if (!Array.isArray(foundPlayer) || foundPlayer.length === 0) {
+    if (!foundPlayer.rows || foundPlayer.rows.length === 0) {
         return res.status(404).json({ error: "Player not found" });
     }
-    try {
-        const enrichedPlayer = foundPlayer.map((p) => {
-            const seasons = clubs.flatMap((club) => 
-                club.preseason.flatMap((season) =>
-                    season.youngsters
-                        .filter((y) => y.playerId === p.id)
-                        .map((y) => ({
-                            club: club.name,
-                            season: season.season,
-                            age: y.age,
-                            appearances: y.appearances
-                        }))
-                )
-            );
-            return { ...p, seasons };
-        });
 
-        res.json(enrichedPlayer);
-    } catch (error) {
-       console.error("Could not enrich player data: ", error);
-       return res.status(500).json({ error: "Unable to receive player data"}); 
-    }
+    res.json(foundPlayer.rows);
 
 });
 app.post("/v1/clubs", (req, res) => {
