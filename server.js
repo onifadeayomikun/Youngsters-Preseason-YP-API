@@ -1,22 +1,28 @@
 import express from "express";
 import pg from "pg";
+import dotenv from "dotenv";
 // import { clubs, players } from "./data.js";
-import env from "dotenv"
+
+dotenv.config();
 
 const app = express();
 const port = 4000;
 
 const db = new pg.Client({
-  user: process.env.PG_USER,
-  host: process.env.PG_HOST,
-  database: process.env.PG_DATABASE,
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT,
+ user: String(process.env.PG_USER ?? "postgres"),
+ host: String(process.env.PG_HOST ?? "localhost"),
+ database: String(process.env.PG_DATABASE ?? "postgres"),
+ password: String(process.env.PG_PASSWORD ?? ""),
+ port: Number(process.env.PG_PORT ?? 5432),
 });
-db.connect();
 
-let clubLastId = clubs.length;
-let playerLastId = players.length + 1000;
+db.connect().catch((error) => {
+ console.error("Database connection failed:", error);
+ process.exit(1);
+});
+
+// let clubLastId = clubs.length;
+// let playerLastId = players.length + 1000;
 
 
 app.use(express.static('public'));
@@ -33,48 +39,72 @@ function normalizePlayerName(name) {
 }
 
 
-app.get("/v1/clubs", async (req, res) => {const clubs = await db.query(`
-  SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
-  players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
-  FROM player_season_stats
-  FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
-  FULL JOIN players ON player_season_stats.player_id = players.player_id
-  FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id;`);
-    if (!clubs) {
+app.get("/v1/clubs", async (req, res) => {
+    const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
+    players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
+    FROM player_season_stats
+    FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
+    FULL JOIN players ON player_season_stats.player_id = players.player_id
+    FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id;`);
+        if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
     }    
     res.json(clubs);
 });
 
-app.get("/v1/clubs/:club", (req, res) => {
-    const clubName = req.params.club;
-    console.log(clubName);
-    const foundClub = clubs.find((club) => club.name.toLowerCase() === clubName.toLowerCase());
-     if (!foundClub) {
-        return res.status(404).json({
-            error: "Club not found"
+app.get("/v1/clubs/:club", async (req, res) => {
+    try {
+        const clubName = req.params.club;
+        console.log(clubName);
+        const foundClub = await db.query(`
+            SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
+            players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
+            FROM player_season_stats
+            FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
+            FULL JOIN players ON player_season_stats.player_id = players.player_id
+            FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id
+            WHERE LOWER(clubs.name) = LOWER($1);`, [clubName]);
+        
+        if (!foundClub.rows || foundClub.rows.length === 0) {
+            return res.status(404).json({
+                error: "Club not found"
+            });
+        }
+
+        res.json(foundClub.rows);
+    } catch (error) {
+        console.error("Error fetching club:", error);
+        return res.status(500).json({
+            error: "An unexpected error occurred while fetching the club"
         });
     }
-
-    res.json(foundClub);
 });
 
 
-app.get("/v1/clubs/:club/preseason/:season", (req, res) => {
-  const clubName = req.params.club;
-  const season = req.params.season;
-  const foundClub = clubs.find((club) => club.name.toLowerCase() === clubName.toLowerCase());
+app.get("/v1/clubs/:club/preseason/:season", async (req, res) => {
+  try {
+    const clubName = req.params.club;
+    const season = req.params.season;
+    
+    const foundSeason = await db.query(`
+        SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
+        players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
+        FROM player_season_stats
+        FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
+        FULL JOIN players ON player_season_stats.player_id = players.player_id
+        FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id
+        WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2;
+    `, [clubName, season]);
 
-  if (!foundClub) {
-    return res.status(404).json({ error: "Club not found" });
+    if (!foundSeason.rows || foundSeason.rows.length === 0) {
+      return res.status(404).json({ error: "Season not found" });
+    }
+
+    res.json(foundSeason.rows);
+  } catch (error) {
+    console.error("Error fetching season:", error);
+    return res.status(500).json({ error: "An unexpected error occurred while fetching the season" });
   }
-
-  const foundSeason = foundClub.preseason.find((p) => p.season === season);
-  if (!foundSeason) {
-     return res.status(404).json({ error: "Season not found" });
-  }
-
-  res.json(foundSeason);
 });
 
 app.get("/v1/seasons/:season", (req, res) => {
