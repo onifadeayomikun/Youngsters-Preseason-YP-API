@@ -120,11 +120,9 @@ app.get("/v1/seasons/:season", async (req, res) => {
 
 app.get("/v1/players", async (req, res) => {
      const players = await db.query(`
-        SELECT DISTINCT players.player_name, players.position, players.nationality, clubs.name AS club_name
-        FROM player_season_stats
-        JOIN clubs ON player_season_stats.club_id = clubs.club_id 
-        JOIN players ON player_season_stats.player_id = players.player_id
-        ORDER BY clubs.name;`);
+        SELECT players.player_id, players.player_name, players.position, players.nationality
+        FROM players 
+        ORDER BY player_name;`);
     if (!players.rows || players.rows.length === 0) {
         return res.status(404).json({ error: "Players not found" });
     } 
