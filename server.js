@@ -147,6 +147,73 @@ app.get("/v1/players/:player", async (req, res) => {
 });
 app.post("/v1/clubs", (req, res) => {
     try {
+        // 1. Get the club
+        const clubResult = await pool.query(`
+            SELECT club_id
+            FROM clubs
+            WHERE name = $1;
+        `, [clubName]);
+
+        const clubId = clubResult.rows[0].club_id;
+
+
+        // 2. Get or create the player
+        let playerResult = await pool.query(`
+            SELECT player_id
+            FROM players
+            WHERE normalized_name = $1;
+        `, [normalizedName]);
+
+        let playerId;
+
+        if (playerResult.rows.length > 0) {
+            // Player already exists
+            playerId = playerResult.rows[0].player_id;
+        } else {
+            // New player
+            const newPlayer = await pool.query(`
+                INSERT INTO players (
+                    player_name,
+                    normalized_name,
+                    nationality
+                )
+                VALUES ($1, $2, $3)
+                RETURNING player_id;
+            `, [playerName, normalizedName, nationality]);
+
+            playerId = newPlayer.rows[0].player_id;
+        }
+
+
+        // 3. Get the season
+        const seasonResult = await pool.query(`
+            SELECT season_id
+            FROM seasons
+            WHERE season_label = $1;
+        `, [seasonLabel]);
+
+        const seasonId = seasonResult.rows[0].season_id;
+
+
+        // 4. Insert the player's stats
+        const statsResult = await pool.query(`
+            INSERT INTO player_season_stats (
+                club_id,
+                season_id,
+                player_id,
+                age,
+                appearances
+            )
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *;
+        `, [
+            clubId,
+            seasonId,
+            playerId,
+            age,
+            appearances
+        ]);
+        //Start from here when I come back 
         const { name, slang, country, city, seasonsAvailable, preseason } = req.body;
 
         if (!name || !country || !city) {
