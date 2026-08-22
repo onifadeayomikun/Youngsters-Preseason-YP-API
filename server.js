@@ -145,88 +145,16 @@ app.get("/v1/players/:player", async (req, res) => {
     res.json(foundPlayer.rows);
 
 });
+
 app.post("/v1/clubs", (req, res) => {
-    try {
-        // 1. Get the club
-        const clubResult = await pool.query(`
-            SELECT club_id
-            FROM clubs
-            WHERE name = $1;
-        `, [clubName]);
+    const { clubName, slang, country, city, seasonsAvailable, playerName, nationality, position, seasonLabel, age, appearances } = req.body;
 
-        const clubId = clubResult.rows[0].club_id;
-
-
-        // 2. Get or create the player
-        let playerResult = await pool.query(`
-            SELECT player_id
-            FROM players
-            WHERE normalized_name = $1;
-        `, [normalizedName]);
-
-        let playerId;
-
-        if (playerResult.rows.length > 0) {
-            // Player already exists
-            playerId = playerResult.rows[0].player_id;
-        } else {
-            // New player
-            const newPlayer = await pool.query(`
-                INSERT INTO players (
-                    player_name,
-                    normalized_name,
-                    nationality
-                )
-                VALUES ($1, $2, $3)
-                RETURNING player_id;
-            `, [playerName, normalizedName, nationality]);
-
-            playerId = newPlayer.rows[0].player_id;
-        }
-
-
-        // 3. Get the season
-        const seasonResult = await pool.query(`
-            SELECT season_id
-            FROM seasons
-            WHERE season_label = $1;
-        `, [seasonLabel]);
-
-        const seasonId = seasonResult.rows[0].season_id;
-
-
-        // 4. Insert the player's stats
-        const statsResult = await pool.query(`
-            INSERT INTO player_season_stats (
-                club_id,
-                season_id,
-                player_id,
-                age,
-                appearances
-            )
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING *;
-        `, [
-            clubId,
-            seasonId,
-            playerId,
-            age,
-            appearances
-        ]);
-        //Start from here when I come back 
-        const { name, slang, country, city, seasonsAvailable, preseason } = req.body;
-
-        if (!name || !country || !city) {
+        if (!clubName || !country || !city) {
             return res.status(400).json({
                 error: "name, country, and city are required",
             });
         }
-
-        if (!Array.isArray(preseason)) {
-            return res.status(400).json({
-                error: "preseason must be an array",
-            });
-        }
+        const normalizedName = normalizePlayerName(playerName);
         if (typeof slang !== "string") {
             return res.status(400).json({
                 error: "Slang must be a string"
@@ -238,102 +166,104 @@ app.post("/v1/clubs", (req, res) => {
             });
         }
 
-        for (const season of preseason) {
-            if (!season.season || !Array.isArray(season.youngsters)) {
-                return res.status(400).json({
-                    error: "Each preseason entry needs a season and a youngsters array",
-                });
-            }
+        if (!playerName || typeof playerName !== "string") {
+            return res.status(400).json({
+                error: "Every youngster needs a valid player name",
+            });
+        }
+        if (!nationality || typeof nationality !== "string") {
+            return res.status(400).json({
+                error: "Every youngster needs a valid nationality",
+            });
+        }        
 
-        for (const player of season.youngsters) {
-            if (!player.player || typeof player.player !== "string") {
-                return res.status(400).json({
-                    error: "Every youngster needs a valid player name",
-                });
-            }
+        if (!position || typeof position !== "string") {
+            return res.status(400).json({
+                error: "Every youngster needs a valid position(Goalkeeper, Defender, Midfielder or Attacker)",
+            });
+        }
+        if (!seasonLabel || typeof seasonLabel !== "string") {
+            return res.status(400).json({
+                error: "Every youngster needs a valid season label",
+            })
+        }
+        
+        if (typeof age !== "number" || !Number.isFinite(age) || age < 0 || age > 100) {
+            return res.status(400).json({
+                error: "Players ages must be valid numbers between 0 and 100",
+            });
+        }
 
-            if (
-                typeof player.age !== "number" ||
-                !Number.isFinite(player.age) ||
-                player.age < 0 || player.age > 100
-            ) {
-                return res.status(400).json({
-                    error: "Players ages must be valid numbers between 0 and 100",
-                });
-            }
+        if (typeof appearances !== "number" || !Number.isInteger(appearances) || appearances < 0) {
+            return res.status(400).json({
+                error: "Players appearances must be a non-negative integer",
+            });
+        }
 
-            if (
-                typeof player.appearances !== "number" ||
-                !Number.isInteger(player.appearances) ||
-                player.appearances < 0
-            ) {
-                return res.status(400).json({
-                    error: "Players appearances must be a non-negative integer",
-                });
-            }
-}
-        }       
-        const newClubPlayers = [];
-        clubLastId++;
-        const newClub = {
-            id: clubLastId,
-            name: req.body.name,
-            slang: req.body.slang,
-            country: req.body.country,
-            city: req.body.city,
-            seasonsAvailable: req.body.seasonsAvailable,
-            preseason: req.body.preseason.map(season => ({
-                season: season.season,
+    try {
+        const clubCheck = await pool.query( `SELECT club_id FROM clubs WHERE name = $1`, [clubName] );
+        let clubId;
 
-                youngsters: season.youngsters.map(player => {
-                    const existingPlayer = players.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
-                    if (existingPlayer) {
-                        return {
-                            player: player.player,
-                            playerId: existingPlayer.id,
-                            age: player.age,
-                            appearances: player.appearances
-                        };
-                    }
+        if (clubCheck.rows.length > 0) {
+            clubId = clubCheck.rows[0].club_id;
+            return res.status(400).json({
+                message: 'Club exists in DB'
+            });
 
-                    const alreadyAddedPlayer = newClubPlayers.find(p => normalizePlayerName(p.player) === normalizePlayerName(player.player));
-                    if(alreadyAddedPlayer) {
-                        return {
-                            player: player.player,
-                            playerId: alreadyAddedPlayer.id ,
-                            age: player.age,
-                            appearances: player.appearances
-                        };
-                    }
+        } else {
+            const newClub = await pool.query(`INSERT INTO clubs (name, slang, country, city, seasons_available)
+                 VALUES ($1, $2, $3, $4, $5) 
+                 RETURNING club_id`, [ clubName, slang, country, city, seasonsAvailable ] );
 
-                    playerLastId++;
-                    const newPlayer = {
-                        player: player.player,
-                        id: playerLastId,
-                        age: player.age,
-                        appearances: player.appearances
-                    };
-                    newClubPlayers.push(newPlayer);
-                    return {
-                        player: player.player,
-                        playerId: newPlayer.id,    
-                        age: player.age,
-                        appearances: player.appearances
-                    };
-                })
-            }))
-        };
-        players.push(...newClubPlayers);
-        clubs.push(newClub);
-        res.status(201).json(newClub);
-            
+            clubId = newClub.rows[0].club_id;
+        }
+
+        const playerCheck = await pool.query(`SELECT player_id FROM players WHERE normalized_name = $1`, [normalizedName]);
+
+        let playerId;
+        if (playerCheck.rows.length > 0) {
+            playerId = playerCheck.rows[0].player_id;
+            return res.status(400).json({
+                message: '' //Problem here
+            })
+        } else {
+            const newPlayer = await pool.query(`INSERT INTO players (player_name, normalized_name, nationality, position)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING player_id`,
+                [ playerName, normalizedName, nationality, position ]);
+
+            playerId = newPlayer.rows[0].player_id;
+        }
+
+        const seasonCheck = await pool.query(`SELECT season_id FROM seasons WHERE season_label = $1`, [seasonLabel]);
+
+        if (seasonCheck.rows.length === 0) {
+
+            return res.status(400).json({
+                message: "Season doesn't exist in DB"
+            });
+
+        }
+
+        const seasonId = seasonCheck.rows[0].season_id;
+
+        const statsResult = await pool.query(`INSERT INTO player_season_stats (club_id, season_id, player_id, age, appearances)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING *`, [ clubId, seasonId, playerId, age, appearances ]
+        );
+
+        res.status(201).json({
+            message: 'Player season data inserted successfully',
+            data: statsResult.rows[0]
+        });
+
     } catch (error) {
       console.error("Error creating club: ", error);
       return res.status(500).json({ 
         error: "An unexpected error occured while creating club",
      });  
     }       
-});
+}); 
 
 app.post("/v1/clubs/:club/preseason",(req, res) => {
     try {
