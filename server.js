@@ -300,13 +300,25 @@ app.patch("/v1/clubs/:club", async (req, res) => {
     }
   try {
     const { name, slang, country, city, seasonsAvailable } = req.body;
+
+    const existingClub = await db.query(`SELECT * FROM clubs WHERE lower(name) = lower($1);`, [club]);
+
+    const updatedName = name || existingClub.rows[0].name;
+    const updatedSlang = slang || existingClub.rows[0].slang; 
+    const updatedCountry = country || existingClub.rows[0].country;
+    const updatedCity = city || existingClub.rows[0].city;
+    const updatedSA = seasonsAvailable || existingClub.rows[0].seasonsAvailable;
+    console.log(updatedCity);
+    console.log(updatedSlang);
+
     const updatedClub = await db.query(`UPDATE Clubs
-        SET name = $1 slang = $2 country = $3 city = $4 seasons_available = $5
-        WHERE lower(name) = lower($6);`)
-
-
-    return res.status(200).json(clubs[clubIndex]);
-
+        SET name = $1, slang = $2, country = $3, city = $4, seasons_available = $5
+        WHERE lower(name) = lower($6);`, [ updatedName, updatedSlang, updatedCountry, updatedCity, updatedSA, club ]);
+    return res.status(200).json({
+        message: "Club Data Updated Successfully",
+        data: updatedClub.rows[0]
+    });
+    console.log(updatedClub);
   } catch (error) {
     console.error("Error updating club profile: ", error);
     return res.status(500).json({ error: "An unexpected error occurred while updating the club profile" });
