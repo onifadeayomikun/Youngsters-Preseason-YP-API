@@ -291,27 +291,20 @@ app.post("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) =
     }
 });
 
-app.patch("/v1/clubs/:club", (req, res) => {
-  try {
-    const clubName = req.params.club;
-    const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === clubName.toLowerCase());
-
-    if (clubIndex === -1) {
-      return res.status(404).json({ error: "Club does not exist" });
+app.patch("/v1/clubs/:club", async (req, res) => {
+    const club = req.params.club;
+    if (!club) {
+        return res.status(404).json({
+            error: "Club not defined"
+        })
     }
+  try {
+    const { name, slang, country, city, seasonsAvailable } = req.body;
+    const updatedClub = await db.query(`UPDATE Clubs
+        SET name = $1 slang = $2 country = $3 city = $4 seasons_available = $5
+        WHERE lower(name) = lower($6);`)
 
-    const existingClub = clubs[clubIndex];
 
-    const updatedClub = {
-      ...existingClub,
-      ...(req.body.name !== undefined ? { name: req.body.name } : {}),
-      ...(req.body.slang !== undefined ? { slang: req.body.slang } : {}),
-      ...(req.body.country !== undefined ? { country: req.body.country } : {}),
-      ...(req.body.city !== undefined ? { city: req.body.city } : {}),
-      ...(req.body.seasonsAvailable !== undefined ? { seasonsAvailable: req.body.seasonsAvailable } : {})
-    };
-
-    clubs[clubIndex] = updatedClub;
     return res.status(200).json(clubs[clubIndex]);
 
   } catch (error) {
@@ -320,7 +313,7 @@ app.patch("/v1/clubs/:club", (req, res) => {
   }
 });
 
-app.patch("/v1/clubs/:club/preseason/:season", (req, res) => {
+app.patch("/v1/clubs/:club/preseason/:season", async (req, res) => {
   try {
     const { club, season } = req.params;
 
@@ -363,7 +356,7 @@ app.patch("/v1/clubs/:club/preseason/:season", (req, res) => {
   }
 });
 
-app.patch("/v1/clubs/:club/preseason/:season/youngsters/:player", (req, res) => {
+app.patch("/v1/clubs/:club/preseason/:season/youngsters/:player", async (req, res) => {
   try {
     const { club, season, player } = req.params;
 
@@ -414,7 +407,7 @@ app.patch("/v1/clubs/:club/preseason/:season/youngsters/:player", (req, res) => 
     return res.status(500).json({ error: "An unexpected error occurred while updating the youngster" });
   }
 });
-app.delete("/v1/clubs/:club", (req, res) => {
+app.delete("/v1/clubs/:club", async (req, res) => {
     try {
         const clubName = req.params.club;
         const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === clubName.toLowerCase());
@@ -432,7 +425,7 @@ app.delete("/v1/clubs/:club", (req, res) => {
         res.status(400).json({ error: "An unexpected error occurred while deleting the Club profile" });
     }    
 });
-app.delete("/v1/clubs/:club/preseason/:season/youngsters/:player", (req, res) => {
+app.delete("/v1/clubs/:club/preseason/:season/youngsters/:player", async (req, res) => {
     try {
         const { club, season, player } = req.params;
         const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === club.toLowerCase());
