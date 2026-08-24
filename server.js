@@ -299,7 +299,7 @@ app.patch("/v1/clubs/:club", async (req, res) => {
         })
     }
   try {
-    const { name, slang, country, city, seasonsAvailable } = req.body;
+    const { name, slang, country, city, seasons_available } = req.body;
 
     const existingClub = await db.query(`SELECT * FROM clubs WHERE lower(name) = lower($1);`, [club]);
 
@@ -307,9 +307,7 @@ app.patch("/v1/clubs/:club", async (req, res) => {
     const updatedSlang = slang || existingClub.rows[0].slang; 
     const updatedCountry = country || existingClub.rows[0].country;
     const updatedCity = city || existingClub.rows[0].city;
-    const updatedSA = seasonsAvailable || existingClub.rows[0].seasonsAvailable;
-    console.log(updatedCity);
-    console.log(updatedSlang);
+    const updatedSA = seasons_available || existingClub.rows[0].seasons_available;
 
     const updatedClub = await db.query(`UPDATE Clubs
         SET name = $1, slang = $2, country = $3, city = $4, seasons_available = $5
