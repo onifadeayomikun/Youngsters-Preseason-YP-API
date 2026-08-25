@@ -365,98 +365,152 @@ app.patch("/v1/players/:player", async (req, res) => {
   }
 });
 
-app.patch("/v1/clubs/:club/preseason/:season/youngsters/:player", async (req, res) => {
-  try {
-    const { club, season, player } = req.params;
-
-    const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === club.toLowerCase());
-    if (clubIndex === -1) {
-      return res.status(404).json({ error: "Club does not exist" });
+app.patch("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) => {
+    const { club, player, season } = req.params;
+    const { age, appearances } = req.body;
+    
+    if (!club || !player || typeof club !== "string" || typeof player !== "string") {
+        return res.status(400).json({
+            error: "Invalid Club or Player name",
+        })
     }
-
-    const existingClub = clubs[clubIndex];
-    const existingPreseason = existingClub.preseason ?? [];
-
-    const seasonIndex = existingPreseason.findIndex((p) => p.season === season);
-    if (seasonIndex === -1) {
-      return res.status(404).json({ error: `No preseason entry found for season ${season}` });
+    if (!season || typeof season !== "string") {
+        return res.status(400).json({
+            error: "Every youngster needs a valid season label",
+        })
     }
+    try {
+        const seasonCheck = await db.query(`SELECT season_id FROM seasons WHERE season_label = $1`, [season]);
+        if (seasonCheck.rows.length === 0) {
+            return res.status(400).json({
+                message: "Season doesn't exist in DB"
+            });
+        }
 
-    const existingYoungsters = existingPreseason[seasonIndex].youngsters ?? [];
-    const youngsterIndex = existingYoungsters.findIndex((y) => normalizePlayerName(y.player).includes(normalizePlayerName(player)));
+        const seasonId = seasonCheck.rows[0].season_id;
+        const clubId = (await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club])).rows[0].club_id;
+        const playerId = (await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player])).rows[0].player_id;
 
-    if (youngsterIndex === -1) {
-      return res.status(404).json({ error: `No youngster found with player name ${player}` });
-    }
+        const statCheck = await db.query(`SELECT * FROM player_season_stats WHERE season_id = $1 
+            AND player_id = $2 AND club_id = $3;`, [ seasonId, playerId, clubId ]);
+            
+        const updatedAge = age || statCheck.rows[0].age ;
+        const updatedAppearances = appearances || statCheck.rows[0].appearances;
+        console.log(updatedAge);
 
-    const currentYoungster = existingYoungsters[youngsterIndex];
-    const updatedYoungsters = [...existingYoungsters];
-    updatedYoungsters[youngsterIndex] = {
-      ...currentYoungster,
-      ...(req.body.player != undefined ? { player: req.body.player } : {}),
-      ...(req.body.age !== undefined ? { age: req.body.age } : {}),
-      ...(req.body.appearances !== undefined ? { appearances: req.body.appearances } : {})
-    };
-
-    const updatedPreseason = [...existingPreseason];
-    updatedPreseason[seasonIndex] = {
-      ...existingPreseason[seasonIndex],
-      youngsters: updatedYoungsters
-    };
-
-    clubs[clubIndex] = {
-      ...existingClub,
-      preseason: updatedPreseason
-    };
-
-    return res.status(200).json(clubs[clubIndex]);
-
+        const statsResult = await db.query(`UPDATE player_season_stats 
+            SET club_id = $1, season_id = $2, player_id = $3, age = $4, appearances = $5
+            WHERE stat_id = $6
+            RETURNING *;`, [ clubId, seasonId, playerId, updatedAge, updatedAppearances, statId ]
+        );
+        return res.status(201).json({
+                message: "Player season Data updated successfully",
+                data: statsResult.rows[0]
+        });
   } catch (error) {
-    console.error("Error updating youngster: ", error);
-    return res.status(500).json({ error: "An unexpected error occurred while updating the youngster" });
+    console.error("Error updating season: ", error);
+    return res.status(500).json({ error: "An unexpected error occurred while updating the player season data" });
   }
 });
 app.delete("/v1/clubs/:club", async (req, res) => {
+    const club = req.params.club;
+    if (!club || typeof club !== "string") {
+        return res.status(404).json({
+            error: "Club not defined"
+        })
+    }
+
     try {
-        const clubName = req.params.club;
-        const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === clubName.toLowerCase());
-        if (clubIndex === -1) {
-            return res.status(404).json({ error: "Club does not exist" });
+        const clubId = (await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1);`, [club])).rows[0].club_id;
+        if (clubId < 1) {
+            return res.status(400).json({
+                error: "Invalid Club Name"
+            })
         }
 
-        if (clubIndex > -1) {
-            clubs.splice(clubIndex, 1);
-            return res.status(200).json(clubs);
-        } 
+        const deletedClub = await db.query(`DELETE FROM clubs WHERE club_id = $1;`, [clubId])
+        return res.status(201).json({
+            message: "Club profile deleted successfully"
+        })
            
     } catch (error) {
         console.error("Error deleting club: ", error);
         res.status(400).json({ error: "An unexpected error occurred while deleting the Club profile" });
     }    
 });
-app.delete("/v1/clubs/:club/preseason/:season/youngsters/:player", async (req, res) => {
+app.delete("/v1/players/:player", async (req, res) => {
+    const player = req.params.player;
+    if (!player || typeof player !== "string") {
+        return res.status(404).json({
+            error: "Player not defined"
+        })
+    }
+
     try {
-        const { club, season, player } = req.params;
-        const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === club.toLowerCase());
-        if (clubIndex === -1) {
-            return res.status(404).json({ error: "Club does not exist" });
+        const playerId = (await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1);`, [player])).rows[0].player_id;
+        if (playerId < 1) {
+            return res.status(400).json({
+                error: "Invalid Player Name"
+            })
         }
 
-        const seasonIndex = clubs[clubIndex].preseason.findIndex((c) => c.season === season);
-        if (seasonIndex === -1) {
-            return res.status(404).json({ error: `No preseason entry found for season ${season}` });
+        const deletedPlayer = await db.query(`DELETE FROM players WHERE player_id = $1;`, [playerId])
+        return res.status(201).json({
+            message: "Player profile deleted successfully"
+        }) 
+           
+    } catch (error) {
+        console.error("Error deleting player: ", error);
+        res.status(500).json({ error: "An unexpected error occurred while deleting the player profile" });
+    }
+});
+
+app.delete("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) => {
+    const { club, player, season } = req.params;
+    
+    if (!club || !player || typeof club !== "string" || typeof player !== "string") {
+        return res.status(400).json({
+            error: "Invalid Club or Player name",
+        })
+    }
+    if (!season || typeof season !== "string") {
+        return res.status(400).json({
+            error: "Every youngster needs a valid season label",
+        })
+    }
+
+    try {
+        const seasonCheck = await db.query(`SELECT season_id FROM seasons WHERE season_label = $1`, [season]);
+        if (seasonCheck.rows.length === 0) {
+            return res.status(400).json({
+                message: "Season doesn't exist in DB"
+            });
         }
 
-        const currentYoungster = clubs[clubIndex].preseason[seasonIndex]
-        const youngsterIndex = currentYoungster.youngsters.findIndex((y) => normalizePlayerName(y.player).includes(normalizePlayerName(player)));
-        if (youngsterIndex === -1) {
-            return res.status(404).json({ error: `No youngster found with player name ${player}` });
+        const seasonId = seasonCheck.rows[0].season_id;
+        const clubId = (await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club])).rows[0].club_id;
+        if (clubId < 1) {
+            return res.status(400).json({
+                error: "Invalid Club Name"
+            })
         }
 
-        if (youngsterIndex > -1) {
-            currentYoungster.youngsters.splice(youngsterIndex, 1);
-            return res.status(200).json(clubs);
-        } 
+        const playerId = (await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player])).rows[0].player_id;
+        if (playerId < 1) {
+            return res.status(400).json({
+                error: "Invalid Player Name"
+            })
+        }
+
+        const statCheck = await db.query(`SELECT * FROM player_season_stats WHERE season_id = ($1)
+             AND player_id = ($2) AND club_id = ($3);`, [ seasonId, playerId, clubId ]);
+        
+        const statId = statCheck.rows[0].stat_id;
+
+        const deletedPlayer = await db.query(`DELETE FROM player_season_stats WHERE stat_id = $1;`, [statId])
+        return res.status(201).json({
+            message: "Player Season profile deleted successfully"
+        }) 
            
     } catch (error) {
         console.error("Error deleting player: ", error);
