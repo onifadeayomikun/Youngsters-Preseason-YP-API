@@ -293,7 +293,7 @@ app.post("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) =
 
 app.patch("/v1/clubs/:club", async (req, res) => {
     const club = req.params.club;
-    if (!club) {
+    if (!club || typeof club !== "string") {
         return res.status(404).json({
             error: "Club not defined"
         })
@@ -302,6 +302,11 @@ app.patch("/v1/clubs/:club", async (req, res) => {
     const { name, slang, country, city, seasons_available } = req.body;
 
     const existingClub = await db.query(`SELECT * FROM clubs WHERE lower(name) = lower($1);`, [club]);
+    if (existingClub.rows.length <= 1) {
+        return res.status(404).json({
+            error: "Invalid Club Name"
+        })
+    }
 
     const updatedName = name || existingClub.rows[0].name;
     const updatedSlang = slang || existingClub.rows[0].slang; 
@@ -323,46 +328,40 @@ app.patch("/v1/clubs/:club", async (req, res) => {
   }
 });
 
-app.patch("/v1/clubs/:club/preseason/:season", async (req, res) => {
+app.patch("/v1/players/:player", async (req, res) => {
+    const player =  req.params.player;
+    if (!player || typeof player !== "string") {
+        return res.status(404).json({
+            error: "Player not defined"
+        })
+    }
   try {
-    const { club, season } = req.params;
-
-    const clubIndex = clubs.findIndex((c) => c.name.toLowerCase() === club.toLowerCase());
-    if (clubIndex === -1) {
-      return res.status(404).json({ error: "Club does not exist" });
+    const { player_name, nationality, position } = req.body;
+    
+    const existingPlayer = await db.query(`SELECT * FROM players WHERE lower(player_name) = lower($1);`, [player]);
+        if (existingPlayer.rows.length !== 1) {
+        return res.status(404).json({
+            error: "Invalid Player Name"
+        })
     }
+    console.log(existingPlayer);
 
-    const existingClub = clubs[clubIndex];
-    const existingPreseason = existingClub.preseason ?? [];
+    const updatedPlayerName = player_name || existingPlayer.rows[0].player_name;
+    const updatedNationality = nationality || existingPlayer.rows[0].nationality; 
+    const updatedPosition = position || existingPlayer.rows[0].position;
 
-    const seasonIndex = existingPreseason.findIndex((p) => p.season === season);
-    if (seasonIndex === -1) {
-      return res.status(404).json({ error: `No preseason entry found for season ${season}` });
-    }
-
-    const currentSeasonEntry = existingPreseason[seasonIndex];
-
-    if (existingPreseason.some(p => p.season === req.body.season)) {
-        return res.status(404).json({ error: "Cannot have two seasons with the same value" });
-    }
-    const updatedSeasonEntry = {
-      ...currentSeasonEntry,
-      ...(req.body.season !== undefined ? { season: req.body.season } : {})
-    };
-
-    const updatedPreseason = [...existingPreseason];
-    updatedPreseason[seasonIndex] = updatedSeasonEntry;
-
-    clubs[clubIndex] = {
-      ...existingClub,
-      preseason: updatedPreseason
-    };
-
-    return res.status(200).json(clubs[clubIndex]);
+    const updatedPlayer = await db.query(`UPDATE Players
+        SET player_name = $1, nationality = $2, position = $3
+        WHERE lower(player_name) = lower($4);`, [ updatedPlayerName, updatedNationality, updatedPosition, player ]);
+    return res.status(200).json({
+        message: "Player Data Updated Successfully",
+        data: updatedPlayer.rows[0]
+    });
+    console.log(updatedPlayer);
 
   } catch (error) {
-    console.error("Error updating preseason entry: ", error);
-    return res.status(500).json({ error: "An unexpected error occurred while updating the preseason entry" });
+    console.error("Error updating player profile: ", error);
+    return res.status(500).json({ error: "An unexpected error occurred while updating the player profile" });
   }
 });
 
