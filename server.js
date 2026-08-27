@@ -189,48 +189,58 @@ app.post("/v1/clubs", async (req, res) => {
 }); 
 
 app.post("/v1/players", async (req, res) => {
-    const { playerName, nationality, position } = req.body;
+    const { players } = req.body;
 
-    if (!playerName || typeof playerName !== "string") {
+     if (!Array.isArray(players) || players.length === 0) {
         return res.status(400).json({
-            error: "Every youngster needs a valid player name",
+            error: "Players must be a non-empty array"
         });
     }
+    
+    for (const player of players) {
+        const { playerName, nationality, position } = player;
 
-    if (!nationality || typeof nationality !== "string") {
-        return res.status(400).json({
-            error: "Every youngster needs a valid nationality",
-        });
-    }        
-    if (!position || typeof position !== "string") {
-        return res.status(400).json({
-            error: "Every youngster needs a valid position(Goalkeeper, Defender, Midfielder or Attacker)",
-        });
-    }
-
-    try {
-        const playerCheck = await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [playerName]);
-        
-        if (playerCheck.rows.length > 0) {
-            playerId = playerCheck.rows[0].player_id;
+        if (!playerName || typeof playerName !== "string" ||
+        !nationality || typeof nationality !== "string" ||
+        !position || typeof position !== "string"
+        ) {
             return res.status(400).json({
-                message: "Player exist in DB" 
-            })
-        } else {
-            const newPlayer = await db.query(`INSERT INTO players (player_name, nationality, position)
-                 VALUES ($1, $2, $3)
-                 RETURNING *`, [playerName, nationality, position]);
-
-            return res.status(201).json({
-                message: "Player inserted successfully",
-                data: newPlayer.rows[0]
+                error: "Every player needs playerName, nationality, and position"
             });
         }
+    }
+    try {
+        for (const player of players) {
+            const playerCheck = await db.query(`SELECT player_id
+            FROM players
+            WHERE lower(player_name) = lower($1)`, [player.playerName]);
+            if (playerCheck.rows.length > 0) {
+                return res.status(400).json({
+                    message: `${player.playerName} already exists in DB`
+                });
+            }
+        }
+        const values = [];
+        const placeholders = players.map((player, index) => {
+            const offset = index * 3;
+            values.push(player.playerName.trim(), player.nationality.trim(), player.position.trim());
+            return (`($${offset + 1}, $${offset + 2}, $${offset + 3})`);
+        });
+
+        const newPlayer = await db.query(`INSERT INTO players
+            (player_name, nationality, position)
+            VALUES ${placeholders.join(',')}
+            RETURNING *;`, values );
+
+        return res.status(201).json({
+            message: "Players inserted successfully",
+            data: newPlayer.rows
+        });
         
     } catch (error) {
         console.error("Error adding player:", error);
         return res.status(500).json({
-            error: "An unexpected error occured while creating a new player profile"
+            error: "Could not insert players"
         });
     }    
 });
@@ -238,7 +248,7 @@ app.post("/v1/players", async (req, res) => {
 app.post("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) => {
     const { club, player, season } = req.params;
     const { age, appearances } = req.body;
-    
+
     if (!club || !player) {
         return res.status(400).json({
             error: "Invalid Club or Player name",
@@ -270,8 +280,21 @@ app.post("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) =
             });
         }
 
-        const clubId = (await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club])).rows[0].club_id;
-        const playerId = (await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player])).rows[0].player_id;
+        const clubCheck = await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club]);
+        if (clubCheck.rows.length === 0) {
+            return res.status(400).json({
+                message: "Club spelt wrongly or doesn't exist in DB"
+            });
+        }
+        const clubId = clubCheck.rows[0].club_id;
+
+        const playerCheck = await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player]);
+        if (playerCheck.rows.length === 0) {
+            return res.status(400).json({
+                message: "Player spelt wrongly or doesn't exist in DB"
+            });
+        }
+        const playerId = playerCheck.rows[0].player_id;
 
         const seasonId = seasonCheck.rows[0].season_id;
         const statsResult = await db.query(`INSERT INTO player_season_stats (club_id, season_id, player_id, age, appearances)
@@ -388,11 +411,25 @@ app.patch("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) 
         }
 
         const seasonId = seasonCheck.rows[0].season_id;
-        const clubId = (await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club])).rows[0].club_id;
-        const playerId = (await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player])).rows[0].player_id;
+        const clubCheck = (await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club]))
+        if (clubCheck.rows.length === 0) {
+            return res.status(400).json({
+                message: "Club spelt wrongly or doesn't exist in DB"
+            });
+        }
+        const clubId = clubCheck.rows[0].club_id;        
+
+        const playerCheck = (await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player]));
+        if (playerCheck.rows.length === 0) {
+            return res.status(400).json({
+                message: "Player spelt wrongly or doesn't exist in DB"
+            });
+        }
+        const playerId = playerCheck.rows[0].player_id;
 
         const statCheck = await db.query(`SELECT * FROM player_season_stats WHERE season_id = $1 
             AND player_id = $2 AND club_id = $3;`, [ seasonId, playerId, clubId ]);
+        const statId = statCheck.rows[0].stat_id;   
             
         const updatedAge = age || statCheck.rows[0].age ;
         const updatedAppearances = appearances || statCheck.rows[0].appearances;
