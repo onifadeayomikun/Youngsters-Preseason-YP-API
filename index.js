@@ -1,9 +1,19 @@
 import express from "express";
 import axios from "axios";
+import pg from "pg";
 
 const app = express();
 const port = 3000;
 const API_URL = "http://localhost:4000";
+
+const db = new pg.Client({
+  user: "postgres",
+  host: "localhost",
+  database: "auth",
+  password: "mikun2005",
+  port: 5432,
+});
+db.connect();
 
 app.use(express.static("public"));
 
@@ -20,6 +30,20 @@ app.get("/login", async (req, res) => {
 
 app.get("/register", async (req, res) => {
   res.render("register.ejs");
+});
+
+app.post("/login", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  res.render("index.ejs");
+});
+
+app.post("/register", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  res.render("index.ejs");
 });
 
 app.get("/info", async (req, res) => {
