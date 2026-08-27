@@ -39,7 +39,7 @@ app.get("/v1/clubs", async (req, res) => {
     FROM player_season_stats
     FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
     FULL JOIN players ON player_season_stats.player_id = players.player_id
-    FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id;`);
+    JOIN seasons ON player_season_stats.season_id = seasons.season_id;`);
         if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
     }    
@@ -56,7 +56,7 @@ app.get("/v1/clubs/:club", async (req, res) => {
             FROM player_season_stats
             FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
             FULL JOIN players ON player_season_stats.player_id = players.player_id
-            FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id
+            JOIN seasons ON player_season_stats.season_id = seasons.season_id
             WHERE LOWER(clubs.name) = LOWER($1);`, [clubName]);
         
         if (!foundClub.rows || foundClub.rows.length === 0) {
@@ -86,7 +86,7 @@ app.get("/v1/clubs/:club/preseason/:season", async (req, res) => {
         FROM player_season_stats
         FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
         FULL JOIN players ON player_season_stats.player_id = players.player_id
-        FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id
+        JOIN seasons ON player_season_stats.season_id = seasons.season_id
         WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2;`, [clubName, season]);
     if (!foundSeason.rows || foundSeason.rows.length === 0) {
       return res.status(404).json({ error: "Season not found" });
@@ -108,7 +108,7 @@ app.get("/v1/seasons/:season", async (req, res) => {
     FROM player_season_stats
     FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id 
     FULL JOIN players ON player_season_stats.player_id = players.player_id
-    FULL JOIN seasons ON player_season_stats.season_id = seasons.season_id
+    JOIN seasons ON player_season_stats.season_id = seasons.season_id
     WHERE seasons.season_label = $1;`, [season]);
 
   if (!allSeasons.rows || allSeasons.rows.length === 0) {
@@ -126,6 +126,18 @@ app.get("/v1/players", async (req, res) => {
         return res.status(404).json({ error: "Players not found" });
     } 
     res.json(players.rows);   
+});
+app.get("/v1/players-clubs", async (req, res) => {
+    const players = await db.query(`SELECT players.player_id, players.player_name, players.position, players.nationality, clubs.name, seasons.season_label
+        FROM player_season_stats
+        FULL JOIN players ON player_season_stats.player_id = players.player_id
+        FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
+        JOIN seasons ON player_season_stats.season_id = seasons.season_id
+        ORDER BY clubs.club_id, seasons.season_id, players.player_id;`);
+    if (!players.rows || players.rows.length === 0) {
+        return res.status(404).json({ error: "Players not found" });
+    } 
+    res.json(players.rows);
 });
 
 app.get("/v1/players/:player", async (req, res) => {
