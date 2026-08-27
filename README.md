@@ -6,7 +6,7 @@ A RESTful API built with Node.js and Express that tracks young footballers acros
 
 - **Runtime:** Node.js
 - **Framework:** Express
-- **Data:** Static in-memory data (`data.js`)
+- **Data:** Postgresql 
 - **Module System:** ES Modules (`import` / `export`)
 
 ## Getting Started
