@@ -118,6 +118,7 @@ app.get("/v1/seasons/:season", async (req, res) => {
   res.json(allSeasons.rows);
 });
 
+//This GET route below handles players' name, position and nationality
 app.get("/v1/players", async (req, res) => {
      const players = await db.query(`SELECT players.player_id, players.player_name, players.position, players.nationality
         FROM players 
@@ -127,6 +128,8 @@ app.get("/v1/players", async (req, res) => {
     } 
     res.json(players.rows);   
 });
+
+//This GET route below handles v1/players endpoint + clubs + corresponding seasons
 app.get("/v1/players-clubs", async (req, res) => {
     const players = await db.query(`SELECT players.player_id, players.player_name, players.position, players.nationality, clubs.name, seasons.season_label
         FROM player_season_stats
