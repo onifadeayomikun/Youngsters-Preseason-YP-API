@@ -168,7 +168,7 @@ app.post("/v1/clubs", async (req, res) => {
 
         if (clubCheck.rows.length > 0) {
             return res.status(400).json({
-                message: 'Club exists in DB'
+                message: 'Club found'
             });
 
         } else {
@@ -216,7 +216,7 @@ app.post("/v1/players", async (req, res) => {
             WHERE lower(player_name) = lower($1)`, [player.playerName]);
             if (playerCheck.rows.length > 0) {
                 return res.status(400).json({
-                    message: `${player.playerName} already exists in DB`
+                    message: `${player.playerName} already exists`
                 });
             }
         }
@@ -276,14 +276,14 @@ app.post("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) =
 
         if (seasonCheck.rows.length === 0) {
             return res.status(400).json({
-                message: "Season doesn't exist in DB"
+                message: "Season doesn't exist"
             });
         }
 
         const clubCheck = await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club]);
         if (clubCheck.rows.length === 0) {
             return res.status(400).json({
-                message: "Club spelt wrongly or doesn't exist in DB"
+                message: "Club spelt wrongly or doesn't exist"
             });
         }
         const clubId = clubCheck.rows[0].club_id;
@@ -291,7 +291,7 @@ app.post("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) =
         const playerCheck = await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player]);
         if (playerCheck.rows.length === 0) {
             return res.status(400).json({
-                message: "Player spelt wrongly or doesn't exist in DB"
+                message: "Player spelt wrongly or doesn't exist"
             });
         }
         const playerId = playerCheck.rows[0].player_id;
@@ -318,7 +318,7 @@ app.patch("/v1/clubs/:club", async (req, res) => {
     const club = req.params.club;
     if (!club || typeof club !== "string") {
         return res.status(404).json({
-            error: "Club not defined"
+            error: "Club name required"
         })
     }
   try {
@@ -355,7 +355,7 @@ app.patch("/v1/players/:player", async (req, res) => {
     const player =  req.params.player;
     if (!player || typeof player !== "string") {
         return res.status(404).json({
-            error: "Player not defined"
+            error: "Player name required"
         })
     }
   try {
@@ -406,7 +406,7 @@ app.patch("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) 
         const seasonCheck = await db.query(`SELECT season_id FROM seasons WHERE season_label = $1`, [season]);
         if (seasonCheck.rows.length === 0) {
             return res.status(400).json({
-                message: "Season doesn't exist in DB"
+                message: "Season doesn't exist"
             });
         }
 
@@ -414,7 +414,7 @@ app.patch("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) 
         const clubCheck = (await db.query(`SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [club]))
         if (clubCheck.rows.length === 0) {
             return res.status(400).json({
-                message: "Club spelt wrongly or doesn't exist in DB"
+                message: "Club spelt wrongly or doesn't exist"
             });
         }
         const clubId = clubCheck.rows[0].club_id;        
@@ -422,7 +422,7 @@ app.patch("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) 
         const playerCheck = (await db.query(`SELECT player_id FROM players WHERE lower(player_name) = lower($1)`, [player]));
         if (playerCheck.rows.length === 0) {
             return res.status(400).json({
-                message: "Player spelt wrongly or doesn't exist in DB"
+                message: "Player spelt wrongly or doesn't exist"
             });
         }
         const playerId = playerCheck.rows[0].player_id;
@@ -453,7 +453,7 @@ app.delete("/v1/clubs/:club", async (req, res) => {
     const club = req.params.club;
     if (!club || typeof club !== "string") {
         return res.status(404).json({
-            error: "Club not defined"
+            error: "Club name required"
         })
     }
 
@@ -479,7 +479,7 @@ app.delete("/v1/players/:player", async (req, res) => {
     const player = req.params.player;
     if (!player || typeof player !== "string") {
         return res.status(404).json({
-            error: "Player not defined"
+            error: "Player name required"
         })
     }
 
@@ -520,7 +520,7 @@ app.delete("/v1/clubs/:club/players/:player/preseason/:season", async (req, res)
         const seasonCheck = await db.query(`SELECT season_id FROM seasons WHERE season_label = $1`, [season]);
         if (seasonCheck.rows.length === 0) {
             return res.status(400).json({
-                message: "Season doesn't exist in DB"
+                message: "Season doesn't exist"
             });
         }
 
