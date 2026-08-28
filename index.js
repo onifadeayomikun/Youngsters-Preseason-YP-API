@@ -32,21 +32,7 @@ app.get("/register", async (req, res) => {
   res.render("register.ejs");
 });
 
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-
-  res.render("index.ejs");
-});
-
-app.post("/register", (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-
-  res.render("index.ejs");
-});
-
-app.get("/info", async (req, res) => {
+app.get("/info/clubs", async (req, res) => {
   try {
     const response = await axios.get(`${API_URL}/v1/clubs`);
     res.render("index.ejs", { response: response.data });
@@ -54,6 +40,51 @@ app.get("/info", async (req, res) => {
     res.status(500).json({ message: "Error fetching Club Data" });
   }
 });
+
+app.post("/login", async (req, res) => {
+  const email = req.body.username;
+  const password = req.body.password;
+  try {
+    const result = await db.query(`SELECT * FROM auth WHERE email = $1`, [email]);
+    if (result.rows.length > 0) {
+      const storedPassword = result.rows[0].password;
+      if (password === storedPassword) {
+        res.redirect("/info/clubs");
+      } else {
+        res.send("Incorrect Passowrd")
+      }
+    } else {
+      res.send("User not found");
+    }
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "An unexpected error occured while logging in" });
+  }
+});
+
+app.post("/register", async (req, res) => {
+  const email = req.body.username;
+  const password = req.body.password;
+  try {
+    const checkResult = await db.query(`SELECT email FROM auth WHERE email = $1`, [email]);
+    console.log(checkResult);
+    if (checkResult.rows.length > 0) {
+      res.send("Email already exists. Try logging in.");
+    } else {
+      const result = await db.query(`INSERT INTO auth (email, password) VALUES ($1, $2)`, [email, password]);
+      console.log(result);
+      res.redirect("/info/clubs");
+    }
+
+  } catch (error) {
+    console.log(error);
+    res.send("An unexpected error occured while registering new user" );
+  }
+
+});
+
+
 
 app.get("info/clubs/:club", async (req, res) => {
     const club = req.params.club;

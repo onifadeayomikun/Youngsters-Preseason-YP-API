@@ -39,7 +39,8 @@ app.get("/v1/clubs", async (req, res) => {
     FROM player_season_stats
     FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
     FULL JOIN players ON player_season_stats.player_id = players.player_id
-    JOIN seasons ON player_season_stats.season_id = seasons.season_id;`);
+    JOIN seasons ON player_season_stats.season_id = seasons.season_id
+    ORDER BY clubs.club_id, seasons.season_id;`);
         if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
     }    
