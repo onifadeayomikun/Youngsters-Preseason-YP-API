@@ -12,7 +12,7 @@
           <tr>
             <th>Club</th>
             <th>Season</th>
-            <th>Player</th>
+            <th><a href="/info/players">Player</a></th>
             <th>Position</th>
             <th>Nationality</th>
             <th>Age</th>
@@ -23,21 +23,32 @@
 
         <tbody>
           <% response.forEach((club, index) => { %>
+            <% const nextClub = response[index + 1]; %>
             <tr> 
-              <td><%= club.name %></td>
-              <td><%= club.season_label %></td>
-              <td><%= club.player_name %></td>
-              <td><%= club.position %></td>
-              <td><%= club.nationality %></td>
-              <td><%= club.age %></td>
-              <td><%= club.appearances %></td> 
+              <% if (nextClub && club.name !== nextClub.name || !nextClub) { %>
+                <td><%= club.name %></td>
+                <td><a href="<%= club.name %>/preseason/<%= club.season_label %>"><%= club.season_label %></a></td>
+                <td><%= club.player_name %></td>
+                <td><%= club.position %></td>
+                <td><%= club.nationality %></td>
+                <td><%= club.age %></td>
+                <td><%= club.appearances %></td>                
+              <% } else { %>
+                <td><a href="clubs/<%= club.name %>"><%= club.name %></a></td>
+                <td><a href="seasons/<%= club.season_label %>"><%= club.season_label %></a></td>
+                <td><a href="players/<%= club.player_name %>"><%= club.player_name %></a></td>
+                <td><%= club.position %></td>
+                <td><%= club.nationality %></td>
+                <td><%= club.age %></td>
+                <td><%= club.appearances %></td> 
+              <% } %>  
             </tr>  
-           <% const nextClub = response[index + 1]; %>
+           
 
             <% if (nextClub && club.name === nextClub.name && club.season_label !== nextClub.season_label) { %>
               <tr>
                 <td colspan="7" style="padding: 0 8px;">
-                  <hr style="margin: 7px 0;">
+                  <br style="margin: 7px 0;">
                 </td>
               </tr>
             <% } %>
