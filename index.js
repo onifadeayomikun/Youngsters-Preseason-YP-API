@@ -140,6 +140,11 @@ app.get("/info/players/:player", async (req, res) => {
       res.status(500).json({ message: `Error fetching Player data`  });
   }
 });
+
+app.post("/v1/clubs", async (req, res) => {
+    const { name, slang, country, city, seasonsAvailable } = req.body;
+
+});
 // // Create a new post
 // app.post("/api/posts", async (req, res) => {
 //   try {

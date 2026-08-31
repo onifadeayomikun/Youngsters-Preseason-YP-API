@@ -25,7 +25,7 @@
           <% response.forEach((club, index) => { %>
             <% const nextClub = response[index + 1]; %>
             <tr> 
-              <% if (nextClub && club.name !== nextClub.name || !nextClub) { %>
+              <% if (nextClub && club.name === nextClub.name) { %>
                 <td><%= club.name %></td>
                 <td><a href="<%= club.name %>/preseason/<%= club.season_label %>"><%= club.season_label %></a></td>
                 <td><%= club.player_name %></td>
