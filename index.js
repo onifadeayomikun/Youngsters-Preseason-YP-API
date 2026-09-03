@@ -75,7 +75,11 @@ app.post("/register", async (req, res) => {
 app.get("/info/clubs", async (req, res) => {
   try {
     const response = await axios.get(`${API_URL}/v1/clubs`);
-    res.render("index.ejs", { response: response.data });
+    res.render("index.ejs", { 
+      response: response.data,
+      currentPath: req.path
+    });
+    console.log(`Current Path is ` + req.path);
   } catch (error) {
     res.status(500).json({ message: "Error fetching Club Data" });
   }
@@ -85,7 +89,7 @@ app.get("/info/clubs/:club", async (req, res) => {
     const club = req.params.club;
     try {
         const response = await axios.get(`${API_URL}/v1/clubs/${club}`);
-        res.render("index.ejs", { response: response.data });
+        res.render("index.ejs", { response: response.data, currentPath: req.path });
     } catch (error) {
         res.status(500).json({ message: `Error fetching ${club} data`});
     }
@@ -98,7 +102,7 @@ app.get("/info/clubs/:club/preseason/:season", async (req, res) => {
     console.log(season);
     try {
         const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}`);
-        res.render("index.ejs", { response: response.data });
+        res.render("index.ejs", { response: response.data, currentPath: req.path });
     } catch (error) {
         res.status(500).json({ message: `Error fetching ${club} data` });
     }
@@ -106,7 +110,7 @@ app.get("/info/clubs/:club/preseason/:season", async (req, res) => {
 app.get("/info/seasons/:season", async (req, res) => {
   const season = req.params.season;
   try {
-    const response = await axios.get (`${API_URL}/v1/seasons/:season`);
+    const response = await axios.get (`${API_URL}/v1/seasons/${season}`);
     res.render("index.ejs", { response: response.data });
   } catch (error) {
       res.status(500).json({ message: `Error fetching ${season} season data`  });
@@ -116,7 +120,7 @@ app.get("/info/seasons/:season", async (req, res) => {
 app.get("/info/players", async (req, res) => {
   try {
     const response = await axios.get (`${API_URL}/v1/players`);
-    res.render("index.ejs", { response: response.data });
+    res.render("player.ejs", { response: response.data });
   } catch (error) {
       res.status(500).json({ message: `Error fetching Players data`  });
   }

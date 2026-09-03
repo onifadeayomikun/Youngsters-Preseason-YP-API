@@ -2,7 +2,7 @@
 
 <div class="jumbotron centered">
   <div class="container">
-    <h1 class="display-3">YPT</h1>
+    <h1 class="display-3"><a href="/info/clubs">YPT</a></h1>
     <p class="lead">Track every youngster the major clubs have taken for preseason</p>
     <hr>
     
@@ -23,32 +23,27 @@
 
         <tbody>
           <% response.forEach((club, index) => { %>
-            <% const nextClub = response[index + 1]; %>
             <tr> 
-              <% if (nextClub && club.name === nextClub.name) { %>
-                <td><%= club.name %></td>
-                <td><a href="<%= club.name %>/preseason/<%= club.season_label %>"><%= club.season_label %></a></td>
-                <td><%= club.player_name %></td>
-                <td><%= club.position %></td>
-                <td><%= club.nationality %></td>
-                <td><%= club.age %></td>
-                <td><%= club.appearances %></td>                
+              <td><a href="/info/clubs/<%= club.name %>"><%= club.name %></a></td>
+
+              <% if (!locals.currentPath?.includes(encodeURIComponent(club.name))) { %>
+                <td><a href="/info/seasons/<%= club.season_label %>"><%= club.season_label %></a></td>
               <% } else { %>
-                <td><a href="clubs/<%= club.name %>"><%= club.name %></a></td>
-                <td><a href="seasons/<%= club.season_label %>"><%= club.season_label %></a></td>
-                <td><a href="players/<%= club.player_name %>"><%= club.player_name %></a></td>
-                <td><%= club.position %></td>
-                <td><%= club.nationality %></td>
-                <td><%= club.age %></td>
-                <td><%= club.appearances %></td> 
-              <% } %>  
+                <td><a href="/info/clubs/<%= club.name %>/preseason/<%= club.season_label %>"><%= club.season_label %></a></td>
+              <% } %>
+              
+              <td><a href="/info/players/<%= club.player_name %>"><%= club.player_name %></a></td>
+              <td><%= club.position %></td>
+              <td><%= club.nationality %></td>
+              <td><%= club.age %></td>
+              <td><%= club.appearances %></td> 
             </tr>  
-           
+           <% const nextClub = response[index + 1]; %>
 
             <% if (nextClub && club.name === nextClub.name && club.season_label !== nextClub.season_label) { %>
               <tr>
                 <td colspan="7" style="padding: 0 8px;">
-                  <br style="margin: 7px 0;">
+                  <hr style="margin: 7px 0;">
                 </td>
               </tr>
             <% } %>

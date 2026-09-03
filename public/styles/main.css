@@ -1,4 +1,12 @@
-
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+a:hover {
+  color: #7a6c6c;
+  text-decoration: none;  
+}
 
 .letter {
   font-size: 0.3em;

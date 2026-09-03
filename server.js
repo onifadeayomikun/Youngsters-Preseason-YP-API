@@ -147,10 +147,12 @@ app.get("/v1/players-clubs", async (req, res) => {
 app.get("/v1/players/:player", async (req, res) => {
     const player = req.params.player;
     const foundPlayer = await db.query(`
-        SELECT DISTINCT players.player_id, players.player_name, players.position, players.nationality, clubs.name AS club_name
+        SELECT players.player_id, players.player_name, players.position, players.nationality, clubs.name,
+        seasons.season_label, player_season_stats.age, player_season_stats.appearances
         FROM player_season_stats
         JOIN clubs ON player_season_stats.club_id = clubs.club_id 
         JOIN players ON player_season_stats.player_id = players.player_id
+        JOIN seasons ON player_season_stats.season_id = seasons.season_id
         WHERE lower(players.player_name) LIKE '%' || lower($1) || '%';`, [player]);
 
     if (!foundPlayer.rows || foundPlayer.rows.length === 0) {
