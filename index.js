@@ -1,10 +1,12 @@
 import express from "express";
 import axios from "axios";
 import pg from "pg";
+import bcrypt from "bcrypt";
 
 const app = express();
 const port = 3000;
 const API_URL = "http://localhost:4000";
+const saltRounds = 10;
 
 const db = new pg.Client({
   user: "postgres",
@@ -62,8 +64,15 @@ app.post("/register", async (req, res) => {
     if (checkResult.rows.length > 0) {
       res.send("Email already exists. Try logging in.");
     } else {
-      const result = await db.query(`INSERT INTO auth (email, password) VALUES ($1, $2)`, [email, password]);
-      res.redirect("/info/clubs");
+      bcrypt.hash(password, saltRounds, async (err, hash) => {
+        if (err) {
+          console.log("Error hashing password: ", err);
+        }
+        const result = await db.query(`INSERT INTO auth (email, password) VALUES ($1, $2)`,
+        [email, hash]);
+        res.redirect("/info/clubs");
+      });
+      
     }
 
   } catch (error) {
@@ -79,7 +88,6 @@ app.get("/info/clubs", async (req, res) => {
       response: response.data,
       currentPath: req.path
     });
-    console.log(`Current Path is ` + req.path);
   } catch (error) {
     res.status(500).json({ message: "Error fetching Club Data" });
   }
@@ -98,8 +106,6 @@ app.get("/info/clubs/:club", async (req, res) => {
 app.get("/info/clubs/:club/preseason/:season", async (req, res) => {
     const club = req.params.club;
     const season = req.params.season;
-    console.log(club);
-    console.log(season);
     try {
         const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}`);
         res.render("index.ejs", { response: response.data, currentPath: req.path });
