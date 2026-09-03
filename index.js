@@ -41,11 +41,18 @@ app.post("/login", async (req, res) => {
     const result = await db.query(`SELECT * FROM auth WHERE email = $1`, [email]);
     if (result.rows.length > 0) {
       const storedPassword = result.rows[0].password;
-      if (password === storedPassword) {
-        res.redirect("/info/clubs");
-      } else {
-        res.send("Incorrect Passowrd")
-      }
+      bcrypt.compare(password, storedPassword, (err, result) => {
+        if (err) {
+          console.log("Error comparing passwords: ", err);
+        } else {
+          if (result) {
+            res.redirect("/info/clubs");
+          } else {
+            res.send("Incorrect Passowrd")
+          }
+        }
+      })
+
     } else {
       res.send("User not found");
     }
