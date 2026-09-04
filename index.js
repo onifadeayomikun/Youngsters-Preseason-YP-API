@@ -12,11 +12,11 @@ const API_URL = "http://localhost:4000";
 const saltRounds = 10;
 
 const db = new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "auth",
-  password: "mikun2005",
-  port: 5432,
+  user: process.env.PG_USER,
+  host: process.env.PG_HOST,
+  database: process.env.IN_DATABASE,
+  password: process.env.PG_PASSWORD,
+  port: process.env.PG_PORT,
 });
 db.connect();
 
@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(session({
-    secret: "SECRETORPASSWORD",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -67,9 +67,13 @@ app.post("/register", async (req, res) => {
         if (err) {
           console.log("Error hashing password: ", err);
         }
-        const result = await db.query(`INSERT INTO auth (email, password) VALUES ($1, $2)`,
+        const result = await db.query(`INSERT INTO auth (email, password) VALUES ($1, $2) RETURNING *`,
         [email, hash]);
-        res.redirect("/info/clubs");
+        const user = result.rows[0];
+        req.login(user, (err) => {
+          console.log(err)
+          res.redirect("/info/clubs");
+        })
       });
       
     }
