@@ -28,6 +28,9 @@ app.use(session({
     secret: "SECRETORPASSWORD",
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24,
+    }
   })
 );
 
@@ -46,11 +49,11 @@ app.get("/register", async (req, res) => {
   res.render("register.ejs");
 });
 
-app.post("/login", async (req, res) => {
-  const email = req.body.username;
-  const password = req.body.password;
-  
-});
+app.post("/login", passport.authenticate("local", {
+    successRedirect: "/info/clubs",
+    failureRedirect: "/login",
+  })
+);
 
 app.post("/register", async (req, res) => {
   const email = req.body.username;
@@ -79,6 +82,7 @@ app.post("/register", async (req, res) => {
 
 app.get("/info/clubs", async (req, res) => {
   try {
+    console.log(req.user);
     const response = await axios.get(`${API_URL}/v1/clubs`);
     if (req.isAuthenticated()) {
       res.render("index.ejs", { 
@@ -220,6 +224,14 @@ passport.use(new Strategy(async function verify (username, password, cb){
     }
   }) 
 );
+
+passport.serializeUser((user, cb) => {
+  cb(null, user);
+});
+
+passport.deserializeUser((user, cb) => {
+  cb(null, user);
+});
 
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
