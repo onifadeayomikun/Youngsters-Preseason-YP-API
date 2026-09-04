@@ -2,6 +2,9 @@ import express from "express";
 import axios from "axios";
 import pg from "pg";
 import bcrypt from "bcrypt";
+import session from "express-session";
+import passport from "passport";
+import { Strategy } from "passport-local";
 
 const app = express();
 const port = 3000;
@@ -18,9 +21,18 @@ const db = new pg.Client({
 db.connect();
 
 app.use(express.static("public"));
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.use(session({
+    secret: "SECRETORPASSWORD",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.get("/", async (req, res) => {
   res.render("home.ejs");
@@ -37,30 +49,7 @@ app.get("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   const email = req.body.username;
   const password = req.body.password;
-  try {
-    const result = await db.query(`SELECT * FROM auth WHERE email = $1`, [email]);
-    if (result.rows.length > 0) {
-      const storedPassword = result.rows[0].password;
-      bcrypt.compare(password, storedPassword, (err, result) => {
-        if (err) {
-          console.log("Error comparing passwords: ", err);
-        } else {
-          if (result) {
-            res.redirect("/info/clubs");
-          } else {
-            res.send("Incorrect Passowrd")
-          }
-        }
-      })
-
-    } else {
-      res.send("User not found");
-    }
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({ error: "An unexpected error occured while logging in" });
-  }
+  
 });
 
 app.post("/register", async (req, res) => {
@@ -91,10 +80,15 @@ app.post("/register", async (req, res) => {
 app.get("/info/clubs", async (req, res) => {
   try {
     const response = await axios.get(`${API_URL}/v1/clubs`);
-    res.render("index.ejs", { 
-      response: response.data,
-      currentPath: req.path
-    });
+    if (req.isAuthenticated()) {
+      res.render("index.ejs", { 
+        response: response.data,
+        currentPath: req.path
+      });      
+    } else {
+     res.redirect("/login"); 
+    }
+
   } catch (error) {
     res.status(500).json({ message: "Error fetching Club Data" });
   }
@@ -197,6 +191,35 @@ app.post("/v1/clubs", async (req, res) => {
 //     res.status(500).json({ message: "Error deleting post" });
 //   }
 // });
+
+passport.use(new Strategy(async function verify (username, password, cb){
+    try {
+      const result = await db.query(`SELECT * FROM auth WHERE email = $1`, [username]);
+      if (result.rows.length > 0) {
+        const user = result.rows[0];
+        const storedPassword = user.password;
+        bcrypt.compare(password, storedPassword, (err, result) => {
+          if (err) {
+            return cb(err);
+          } else {
+            if (result) {
+              return cb(null, user)
+            } else {
+              return cb(null, false)
+            }
+          }
+        })
+
+      } else {
+        return cb("User not found");
+      }
+
+    } catch (error) {
+      res.status(500).send({ error: "An unexpected error occured while logging in" });
+      return cb(err);
+    }
+  }) 
+);
 
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
