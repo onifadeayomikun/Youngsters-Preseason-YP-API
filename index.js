@@ -4,6 +4,7 @@ import pg from "pg";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import passport from "passport";
+import GoogleStrategy from "passport-google-oauth2";
 import { Strategy } from "passport-local";
 
 const app = express();
@@ -227,6 +228,16 @@ passport.use(new Strategy(async function verify (username, password, cb){
       return cb(err);
     }
   }) 
+);
+
+passport.use("google", new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/info/clubs",
+    userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
+  }, async (accessToken, refreshToken, profile, cb) => {
+    console.log(profile);
+  })
 );
 
 passport.serializeUser((user, cb) => {
