@@ -1,4 +1,5 @@
 import express from "express";
+import dotenv from "dotenv";
 import axios from "axios";
 import pg from "pg";
 import bcrypt from "bcrypt";
@@ -6,6 +7,8 @@ import session from "express-session";
 import passport from "passport";
 import GoogleStrategy from "passport-google-oauth2";
 import { Strategy } from "passport-local";
+
+dotenv.config();
 
 const app = express();
 const port = 3000;
@@ -49,6 +52,17 @@ app.get("/login", async (req, res) => {
 app.get("/register", async (req, res) => {
   res.render("register.ejs");
 });
+
+app.get("/auth/google", passport.authenticate("google", {
+  scope: ["profile", "email"],
+})
+);
+
+app.get("/auth/google/info/clubs", passport.authenticate("google", {
+    successRedirect: "/info/clubs",
+    failureRedirect: "/login",
+  })
+);
 
 app.post("/login", passport.authenticate("local", {
     successRedirect: "/info/clubs",
@@ -201,7 +215,7 @@ app.post("/v1/clubs", async (req, res) => {
 //   }
 // });
 
-passport.use(new Strategy(async function verify (username, password, cb){
+passport.use("local", new Strategy(async function verify (username, password, cb){
     try {
       const result = await db.query(`SELECT * FROM auth WHERE email = $1`, [username]);
       if (result.rows.length > 0) {
@@ -236,7 +250,7 @@ passport.use("google", new GoogleStrategy({
     callbackURL: "http://localhost:3000/auth/google/info/clubs",
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
   }, async (accessToken, refreshToken, profile, cb) => {
-    console.log(profile);
+    // console.log(profile);
   })
 );
 
