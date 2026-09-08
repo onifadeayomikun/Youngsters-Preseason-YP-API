@@ -250,7 +250,17 @@ passport.use("google", new GoogleStrategy({
     callbackURL: "http://localhost:3000/auth/google/info/clubs",
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
   }, async (accessToken, refreshToken, profile, cb) => {
-    // console.log(profile);
+    try {
+    const result = await db.query("SELECT * FROM auth WHERE email = $1", [profile.email])
+    if (result.rows.length === 0 ) {
+      const newUser = await db.query("INSERT INTO auth (email, password) VALUES ($1, $2)", [profile.email, "google"])
+      cb(null, newUser.rows[0]);
+    } else {
+      cb(null, result.rows[0])
+    }
+  } catch (err) {
+    cb(err);
+    }
   })
 );
 
