@@ -8,30 +8,19 @@ const app = express();
 const port = 4000;
 
 const db = new pg.Client({
- user: String(process.env.PG_USER ?? "postgres"),
- host: String(process.env.PG_HOST ?? "localhost"),
- database: String(process.env.PG_DATABASE ?? "postgres"),
- password: String(process.env.PG_PASSWORD ?? ""),
- port: Number(process.env.PG_PORT ?? 5432),
+ user: String(process.env.PG_USER ),
+ host: String(process.env.PG_HOST ),
+ database: String(process.env.PG_DATABASE),
+ password: String(process.env.PG_PASSWORD ),
+ port: Number(process.env.PG_PORT),
 });
 
-db.connect().catch((error) => {
- console.error("Database connection failed:", error);
- process.exit(1);
-});
+db.connect();
 
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-function normalizePlayerName(name) {
-    return name
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") 
-        .trim()
-        .replace(/\s+/g, " ")
-        .toLowerCase();            
-}
 
 app.get("/v1/clubs", async (req, res) => {
     const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
