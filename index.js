@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import axios from "axios";
 import pg from "pg";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import session from "express-session";
 import passport from "passport";
 import GoogleStrategy from "passport-google-oauth2";
