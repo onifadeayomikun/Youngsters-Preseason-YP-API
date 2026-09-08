@@ -87,18 +87,37 @@ app.get("/auth/google/info/clubs", passport.authenticate("google", {
     failureRedirect: "/login",
   })
 );
+
 app.get("/logout", async (req, res) => {
   req.logout((err) => {
     if (err) console.log(err);
     res.redirect("/");
   })
-})
+});
 
 app.post("/login", passport.authenticate("local", {
     successRedirect: "/info/clubs",
     failureRedirect: "/login",
   })
 );
+
+app.post("/login", (req, res, next) => {
+  passport.authenticate("local", { session: false }, (error, user) => {
+    if (error) return next(error);
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Invalid email or password",
+      });
+    }
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );        
+  return res.json({ token });
+  })
+});
 
 app.post("/register", async (req, res) => {
   const email = req.body.username;
@@ -167,6 +186,7 @@ app.get("/info/clubs/:club/preseason/:season", async (req, res) => {
         res.status(500).json({ message: `Error fetching ${club} data` });
     }
 });
+
 app.get("/info/seasons/:season", async (req, res) => {
   const season = req.params.season;
   try {
@@ -205,20 +225,56 @@ app.get("/info/players/:player", async (req, res) => {
   }
 });
 
+app.get('/dashboard', authenticate, requireRole('admin', 'editor'), (req, res) => {
+  res.json({ message: `Welcome, ${req.user.role}` });
+});
+
 app.post("/v1/clubs", async (req, res) => {
     const { name, slang, country, city, seasonsAvailable } = req.body;
+    if (!name || !country || !city) {
+      return res.send("name, country, and city are required");
+    }
+    if (!slang || typeof slang !== "string") {
+        return res.send("Slang must be a string");
+    }
+    if (typeof seasonsAvailable != "number" || !Number.isInteger(seasonsAvailable) || seasonsAvailable < 0) {
+        return res.send("Seasons Available must be a non-negative integer");
+    }    
+    try {
+        const clubCheck = await db.query( `SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [name] );
+
+        if (clubCheck.rows.length > 0) {
+            return res.send("Club found");
+
+        } else {
+            const newClub = await db.query(`INSERT INTO clubs (name, slang, country, city, seasons_available)
+                 VALUES ($1, $2, $3, $4, $5)`, [ name, slang, country, city, seasonsAvailable ] );
+            res.status(201).json({
+            message: 'Club inserted successfully',
+            data: newClub.rows[0]
+        });
+        }
+
+    } catch (error) {
+      console.error("Error creating club: ", error);
+      return res.status(500).json({ 
+        error: "An unexpected error occured while creating club",
+     });  
+    }       
+
 
 });
-// // Create a new Club
-// app.post("/api/posts", async (req, res) => {
-//   try {
-//     const response = await axios.post(`${API_URL}/posts`, req.body);
-//     console.log(response.data);
-//     res.redirect("/");
-//   } catch (error) {
-//     res.status(500).json({ message: "Error creating post" });
-//   }
-// });
+
+// Create a new Club
+app.post("/api/posts", async (req, res) => {
+  try {
+    const response = await axios.post(`${API_URL}/posts`, req.body);
+    console.log(response.data);
+    res.redirect("/");
+  } catch (error) {
+    res.status(500).json({ message: "Error creating post" });
+  }
+});
 
 // // Partially update a post
 // app.post("/api/posts/:id", async (req, res) => {
@@ -262,22 +318,23 @@ passport.use("local", new Strategy(async function verify (username, password, cb
             }
           }
         })
-        const token = jwt.sign(
-          { id: user.id, role: user.role },
-          process.env.JWT_SECRET,
-          { expiresIn: '1h' }
-        );        
-        res.json({ token });
-
       } else {
         return cb("User not found");
       }
 
     } catch (error) {
-      res.status(500).send({ error: "An unexpected error occured while logging in" });
+      res.send({ error: "An unexpected error occured while logging in" });
       return cb(err);
     }
   }) 
+);
+
+passport.use("local",new Strategy({ passReqToCallback: true }, 
+  async (req, username, password, cb) => {
+    console.log(req.ip);
+    return cb(null, user);
+  }
+)
 );
 
 passport.use("google", new GoogleStrategy({
