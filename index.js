@@ -42,6 +42,29 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+function authenticate(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer")) {
+    return res.status(401).json({error: "No token provided"});
+  }
+  try {
+    req.user = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+    next();
+  } catch (error) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden: insufficient role' });
+    }
+    next();
+  };
+}
+
 app.get("/", async (req, res) => {
   res.render("home.ejs");
 });
@@ -239,6 +262,12 @@ passport.use("local", new Strategy(async function verify (username, password, cb
             }
           }
         })
+        const token = jwt.sign(
+          { id: user.id, role: user.role },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );        
+        res.json({ token });
 
       } else {
         return cb("User not found");
