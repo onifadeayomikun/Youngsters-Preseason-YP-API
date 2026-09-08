@@ -53,6 +53,10 @@ app.get("/register", async (req, res) => {
   res.render("register.ejs");
 });
 
+app.get("/logout", async (req, res) => {
+  res.redirect("/");
+})
+
 app.get("/auth/google", passport.authenticate("google", {
   scope: ["profile", "email"],
 })
