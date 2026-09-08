@@ -53,10 +53,6 @@ app.get("/register", async (req, res) => {
   res.render("register.ejs");
 });
 
-app.get("/logout", async (req, res) => {
-  res.redirect("/");
-})
-
 app.get("/auth/google", passport.authenticate("google", {
   scope: ["profile", "email"],
 })
@@ -67,6 +63,12 @@ app.get("/auth/google/info/clubs", passport.authenticate("google", {
     failureRedirect: "/login",
   })
 );
+app.get("/logout", async (req, res) => {
+  req.logout((err) => {
+    if (err) console.log(err);
+    res.redirect("/");
+  })
+})
 
 app.post("/login", passport.authenticate("local", {
     successRedirect: "/info/clubs",
@@ -183,7 +185,7 @@ app.post("/v1/clubs", async (req, res) => {
     const { name, slang, country, city, seasonsAvailable } = req.body;
 
 });
-// // Create a new post
+// // Create a new Club
 // app.post("/api/posts", async (req, res) => {
 //   try {
 //     const response = await axios.post(`${API_URL}/posts`, req.body);
