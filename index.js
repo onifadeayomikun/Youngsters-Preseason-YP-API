@@ -57,6 +57,9 @@ function authenticate(req, res, next) {
 
 function requireRole(...allowedRoles) {
   return (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.redirect("/login");
+    }
     if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Forbidden: insufficient role' });
@@ -287,11 +290,11 @@ passport.use("local", new Strategy({ passReqToCallback: true }, async function v
     try {
       console.log(req.ip);
       const result = await db.query(`SELECT * FROM auth WHERE email = $1`, [username]);
-      if (result.rows.length > 0) {
+      if (result.rows.length === 0) {
         return cb(null, false);
       }        
       const user = result.rows[0];
-      const passwordMatches = await bcrypt.compare(passwordMatches, user.password);
+      const passwordMatches = await bcrypt.compare(password, user.password);
       
       if (!passwordMatches) {
         return cb(null, false);
@@ -315,13 +318,13 @@ passport.use("google", new GoogleStrategy({
     try {
     const result = await db.query("SELECT * FROM auth WHERE email = $1", [profile.email])
     if (result.rows.length === 0 ) {
-      const newUser = await db.query("INSERT INTO auth (email, password) VALUES ($1, $2)", [profile.email, "google"])
-      cb(null, newUser.rows[0]);
+      const newUser = await db.query("INSERT INTO auth (email, password) VALUES ($1, $2) RETURNING *", [profile.email, "google"])
+      return cb(null, newUser.rows[0]);
     } else {
-      cb(null, result.rows[0])
+      return cb(null, result.rows[0])
     }
   } catch (err) {
-    cb(err);
+    return cb(err);
     }
   })
 );
