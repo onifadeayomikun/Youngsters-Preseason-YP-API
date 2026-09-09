@@ -101,24 +101,6 @@ app.post("/login", passport.authenticate("local", {
   })
 );
 
-app.post("/login", (req, res, next) => {
-  passport.authenticate("local", { session: false }, (error, user) => {
-    if (error) return next(error);
-
-    if (!user) {
-      return res.status(401).json({
-        error: "Invalid email or password",
-      });
-    }
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );        
-  return res.json({ token });
-  })
-});
-
 app.post("/register", async (req, res) => {
   const email = req.body.username;
   const password = req.body.password;
@@ -301,41 +283,28 @@ app.post("/api/posts", async (req, res) => {
 //   }
 // });
 
-passport.use("local", new Strategy(async function verify (username, password, cb){
+passport.use("local", new Strategy({ passReqToCallback: true }, async function verify (req, username, password, cb){
     try {
+      console.log(req.ip);
       const result = await db.query(`SELECT * FROM auth WHERE email = $1`, [username]);
       if (result.rows.length > 0) {
-        const user = result.rows[0];
-        const storedPassword = user.password;
-        bcrypt.compare(password, storedPassword, (err, result) => {
-          if (err) {
-            return cb(err);
-          } else {
-            if (result) {
-              return cb(null, user)
-            } else {
-              return cb(null, false)
-            }
-          }
-        })
-      } else {
-        return cb("User not found");
-      }
-
+        return cb(null, false);
+      }        
+      const user = result.rows[0];
+      const passwordMatches = await bcrypt.compare(passwordMatches, user.password);
+      
+      if (!passwordMatches) {
+        return cb(null, false);
+      } 
+     
+      return cb(null, user)
+        
     } catch (error) {
-      res.send({ error: "An unexpected error occured while logging in" });
-      return cb(err);
+      return cb(error);
     }
   }) 
 );
 
-passport.use("local",new Strategy({ passReqToCallback: true }, 
-  async (req, username, password, cb) => {
-    console.log(req.ip);
-    return cb(null, user);
-  }
-)
-);
 
 passport.use("google", new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
