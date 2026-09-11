@@ -210,6 +210,14 @@ app.get('/dashboard', requireRole('admin', 'editor'), (req, res) => {
   res.json({ message: `Welcome, ${req.user.role}` });
 });
 
+app.get("/new", (req, res) => {
+  res.render("modify.ejs")
+})
+
+app.get("/modify", (req, res) => {
+  res.render("modify.ejs")
+})
+
 app.post("/info/clubs", async (req, res) => {
   const { name, slang, country, city, seasonsAvailable } = req.body;   
   try {

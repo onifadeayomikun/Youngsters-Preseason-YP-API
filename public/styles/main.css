@@ -7,6 +7,19 @@ a:hover {
   color: #7a6c6c;
   text-decoration: none;  
 }
+.container-lead-a {
+  display: flex;
+  justify-content: space-between;
+}
+.leadTag {
+  padding: 7px;
+  border: 2px solid black;
+  border-radius: 7px;
+}
+.svgTag {
+  border: 2px solid black;
+  border-radius: 70px;
+}
 
 .letter {
   font-size: 0.3em;

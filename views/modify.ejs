@@ -15,13 +15,13 @@
                         <button class="full-width" type="submit"> <%= submit %> </button>
                     </form>
             <% } else {%>
-                <form id="newPostForm" class="form" method="post" action="/info/clubs">
+                <form id="newForm" class="form" method="post" action="/info/clubs">
                     <input type="text" name="name" placeholder="Club Name" required>
                     <input type="text" name="slang" placeholder="Slang" required>
                     <input type="text" name="country" placeholder="Country" required>
                     <input type="text" name="city" placeholder="City" required>
                     <input type="text" name="seasons_available" placeholder="Seasons Available" required>
-                    <button class="full-width" type="submit">  <%= submit %> </button>
+                    <button class="full-width" type="submit">  Submit </button>
                 </form>
                 <% } %>
         </div>
