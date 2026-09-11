@@ -30,7 +30,16 @@ app.get("/v1/clubs", async (req, res) => {
     FULL JOIN players ON player_season_stats.player_id = players.player_id
     JOIN seasons ON player_season_stats.season_id = seasons.season_id
     ORDER BY clubs.club_id, seasons.season_id;`);
-        if (!clubs) {
+    if (!clubs) {
+        return res.status(404).json({ error: "Clubs not found" });
+    }    
+    res.json(clubs.rows);
+});
+
+app.get("/v1/club", async (req, res) => {
+    const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available
+    FROM clubs ORDER BY clubs.club_id`);
+    if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
     }    
     res.json(clubs.rows);

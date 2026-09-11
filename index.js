@@ -42,19 +42,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-function authenticate(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer")) {
-    return res.status(401).json({error: "No token provided"});
-  }
-  try {
-    req.user = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
-    next();
-  } catch (error) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
-  }
-};
-
 function requireRole(...allowedRoles) {
   return (req, res, next) => {
     if (!req.isAuthenticated()) {
@@ -153,7 +140,7 @@ app.get("/info/clubs", async (req, res) => {
 
 app.get("/info/club", async(req, res) => {
   try {
-    const response = await axios.get(`${API_URL}/v1/clubs`);
+    const response = await axios.get(`${API_URL}/v1/club`);
     res.render("club.ejs", { response: response.data });
   } catch (error) {
       res.send(`Error fetching Club Data`);
@@ -219,7 +206,7 @@ app.get("/info/players/:player", async (req, res) => {
   }
 });
 
-app.get('/dashboard', authenticate, requireRole('admin', 'editor'), (req, res) => {
+app.get('/dashboard', requireRole('admin', 'editor'), (req, res) => {
   res.json({ message: `Welcome, ${req.user.role}` });
 });
 
@@ -233,19 +220,11 @@ app.post("/add/clubs", async (req, res) => {
       city: city,
       seasonsAvailable: seasonsAvailable
     });
-    res.status(201).json({
-    message: 'Club inserted successfully',
-    data: response.rows[0]
-  });
-
+    res.redirect("/info/club");
   } catch (error) {
     console.error("Error creating club: ", error);
-    return res.status(500).json({ 
-      error: "An unexpected error occured while creating club",
-    });  
+    return res.send("Error creating new club");  
   }       
-
-
 });
 
 // Create a new Club
