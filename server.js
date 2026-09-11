@@ -180,7 +180,7 @@ app.post("/v1/clubs", async (req, res) => {
 
         } else {
             const newClub = await db.query(`INSERT INTO clubs (name, slang, country, city, seasons_available)
-                 VALUES ($1, $2, $3, $4, $5)`, [ name, slang, country, city, seasonsAvailable ] );
+            VALUES ($1, $2, $3, $4, $5)`, [ name, slang, country, city, seasonsAvailable ] );
             res.status(201).json({
             message: 'Club inserted successfully',
             data: newClub.rows[0]

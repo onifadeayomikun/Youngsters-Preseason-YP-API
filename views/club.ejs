@@ -1,0 +1,41 @@
+<%- include("partials/header.ejs") %>
+
+<div class="jumbotron centered">
+  <div class="container">
+    <h1 class="display-3"><a href="/info/clubs">YPT</a></h1>
+    <p class="lead">Track every youngster the major clubs have taken for preseason</p>
+    <hr>
+    
+    <div class="table-responsive w-75 mx-auto">
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th><a href="/info/clubs">Club</a></th> 
+            <th>Slang</th>
+            <th>Country</th>
+            <th>City</th>
+            <th>Seasons Available</th>
+            
+          </tr>
+        </thead>
+
+        <tbody>
+          <% response.forEach((club) => { %>
+            <tr> 
+              <td><a href="/info/clubs/<%= club.name %>"><%= club.name %></a></td>
+              <td><%= club.slang %></td>
+              <td><%= club.country %></td>
+              <td><%= club.city %></td>
+              <td><%= club.seasonsAvailable %></td> 
+            </tr>  
+          <% }) %>
+
+        </tbody> 
+      </table>   
+    </div>
+
+  </div>
+</div>
+
+
+<%- include("partials/footer.ejs") %>

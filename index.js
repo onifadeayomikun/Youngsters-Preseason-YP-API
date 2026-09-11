@@ -151,13 +151,22 @@ app.get("/info/clubs", async (req, res) => {
   }
 });
 
+app.get("/info/club", async(req, res) => {
+  try {
+    const response = await axios.get(`${API_URL}/v1/clubs`);
+    res.render("club.ejs", { response: response.data });
+  } catch (error) {
+      res.send(`Error fetching Club Data`);
+  }
+});
+
 app.get("/info/clubs/:club", async (req, res) => {
     const club = req.params.club;
     try {
         const response = await axios.get(`${API_URL}/v1/clubs/${club}`);
         res.render("index.ejs", { response: response.data, currentPath: req.path });
     } catch (error) {
-        res.status(500).json({ message: `Error fetching ${club} data`});
+        res.send(`Error fetching ${club} data`);
     }
 });
 
@@ -214,38 +223,27 @@ app.get('/dashboard', authenticate, requireRole('admin', 'editor'), (req, res) =
   res.json({ message: `Welcome, ${req.user.role}` });
 });
 
-app.post("/v1/clubs", async (req, res) => {
-    const { name, slang, country, city, seasonsAvailable } = req.body;
-    if (!name || !country || !city) {
-      return res.send("name, country, and city are required");
-    }
-    if (!slang || typeof slang !== "string") {
-        return res.send("Slang must be a string");
-    }
-    if (typeof seasonsAvailable != "number" || !Number.isInteger(seasonsAvailable) || seasonsAvailable < 0) {
-        return res.send("Seasons Available must be a non-negative integer");
-    }    
-    try {
-        const clubCheck = await db.query( `SELECT club_id FROM clubs WHERE lower(name) = lower($1)`, [name] );
+app.post("/add/clubs", async (req, res) => {
+  const { name, slang, country, city, seasonsAvailable } = req.body;   
+  try {
+    const response = await axios.post(`${API_URL}/v1/clubs`, {
+      name: name,
+      slang: slang,
+      country: country,
+      city: city,
+      seasonsAvailable: seasonsAvailable
+    });
+    res.status(201).json({
+    message: 'Club inserted successfully',
+    data: response.rows[0]
+  });
 
-        if (clubCheck.rows.length > 0) {
-            return res.send("Club found");
-
-        } else {
-            const newClub = await db.query(`INSERT INTO clubs (name, slang, country, city, seasons_available)
-                 VALUES ($1, $2, $3, $4, $5)`, [ name, slang, country, city, seasonsAvailable ] );
-            res.status(201).json({
-            message: 'Club inserted successfully',
-            data: newClub.rows[0]
-        });
-        }
-
-    } catch (error) {
-      console.error("Error creating club: ", error);
-      return res.status(500).json({ 
-        error: "An unexpected error occured while creating club",
-     });  
-    }       
+  } catch (error) {
+    console.error("Error creating club: ", error);
+    return res.status(500).json({ 
+      error: "An unexpected error occured while creating club",
+    });  
+  }       
 
 
 });
