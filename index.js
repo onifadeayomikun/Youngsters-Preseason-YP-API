@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import axios from "axios";
 import pg from "pg";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import session from "express-session";
 import passport from "passport";
 import GoogleStrategy from "passport-google-oauth2";
@@ -141,7 +140,11 @@ app.get("/info/clubs", async (req, res) => {
 app.get("/info/club", async(req, res) => {
   try {
     const response = await axios.get(`${API_URL}/v1/club`);
-    res.render("club.ejs", { response: response.data });
+    if (req.isAuthenticated()) {
+      res.render("club.ejs", { response: response.data, currentPath: req.path });
+    } else {
+      res.redirect("/login");
+    }
   } catch (error) {
       res.send(`Error fetching Club Data`);
   }
@@ -151,7 +154,11 @@ app.get("/info/clubs/:club", async (req, res) => {
     const club = req.params.club;
     try {
         const response = await axios.get(`${API_URL}/v1/clubs/${club}`);
-        res.render("index.ejs", { response: response.data, currentPath: req.path });
+    if (req.isAuthenticated()) {
+      res.render("index.ejs", { response: response.data, currentPath: req.path });
+    } else {
+      res.redirect("/login");
+    }        
     } catch (error) {
         res.send(`Error fetching ${club} data`);
     }
@@ -162,7 +169,11 @@ app.get("/info/clubs/:club/preseason/:season", async (req, res) => {
     const season = req.params.season;
     try {
         const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}`);
+      if (req.isAuthenticated()) {
         res.render("index.ejs", { response: response.data, currentPath: req.path });
+      } else {
+        res.redirect("/login");
+      }        
     } catch (error) {
         res.status(500).json({ message: `Error fetching ${club} data` });
     }
@@ -172,7 +183,11 @@ app.get("/info/seasons/:season", async (req, res) => {
   const season = req.params.season;
   try {
     const response = await axios.get (`${API_URL}/v1/seasons/${season}`);
-    res.render("index.ejs", { response: response.data });
+    if (req.isAuthenticated()) {
+      res.render("index.ejs", { response: response.data });
+    } else {
+      res.redirect("/login");
+    }
   } catch (error) {
       res.status(500).json({ message: `Error fetching ${season} season data`  });
   }
@@ -181,7 +196,11 @@ app.get("/info/seasons/:season", async (req, res) => {
 app.get("/info/players", async (req, res) => {
   try {
     const response = await axios.get (`${API_URL}/v1/players`);
-    res.render("player.ejs", { response: response.data });
+    if (req.isAuthenticated()) {
+      res.render("player.ejs", { response: response.data });
+    } else {
+      res.redirect("/login");
+    }
   } catch (error) {
       res.status(500).json({ message: `Error fetching Players data`  });
   }
@@ -190,7 +209,11 @@ app.get("/info/players", async (req, res) => {
 app.get("/info/players-clubs", async (req, res) => {
   try {
     const response = await axios.get (`${API_URL}/v1/players-clubs`);
-    res.render("index.ejs", { response: response.data });
+    if (req.isAuthenticated()) {
+      res.render("index.ejs", { response: response.data });
+    } else {
+      res.redirect("/login");
+    }
   } catch (error) {
       res.status(500).json({ message: `Error fetching Players data`  });
   }
@@ -200,7 +223,11 @@ app.get("/info/players/:player", async (req, res) => {
   const player = req.params.player;
   try {
     const response = await axios.get (`${API_URL}/v1/players/${player}`);
-    res.render("index.ejs", { response: response.data });
+    if (req.isAuthenticated()) {
+      res.render("index.ejs", { response: response.data });
+    } else {
+      res.redirect("/login");
+    }
   } catch (error) {
       res.status(500).json({ message: `Error fetching Player data`  });
   }
@@ -211,11 +238,20 @@ app.get('/dashboard', requireRole('admin', 'editor'), (req, res) => {
 });
 
 app.get("/new", (req, res) => {
-  res.render("modify.ejs")
+  if (req.isAuthenticated()) {
+    res.render("modify.ejs", { submit: "Create Club" });
+  } else {
+    res.redirect("/login");
+  }
+  
 })
 
 app.get("/modify", (req, res) => {
-  res.render("modify.ejs")
+  if (req.isAuthenticated()) {
+    res.render("modify.ejs", { submit: "Update Club" });
+  } else {
+    res.redirect("/login");
+  }
 })
 
 app.post("/info/clubs", async (req, res) => {
