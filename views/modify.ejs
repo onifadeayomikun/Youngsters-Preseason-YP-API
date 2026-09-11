@@ -1,0 +1,31 @@
+<%- include("partials/header.ejs") %>
+    <div class="jumbotron centered">
+        <div class="container">
+            <h1 class="display-3"><a href="/info/clubs">YPT</a></h1>
+            <p class="lead">Track every youngster the major clubs have taken for preseason</p>
+            <hr>
+
+            <% if (locals.club) { %>
+                    <form id="editForm" class="form" method="post" action="/edit/<%=post.id%>">
+                        <input type="text" name="title" value="<%=post.title%>">
+                        <textarea name="content" rows="10"> <%=post.content %> </textarea>
+                        <input type="text" name="type" value="<%=post.type%>">
+                        <input type="text" name="author" value="<%=post.author %>">
+                        <button class="full-width" type="submit">
+                            <%= submit %>
+                        </button>
+                    </form>
+            <% } else {%>
+                <form id="newPostForm" class="form" method="post" action="/posts">
+                    <input type="text" name="title" placeholder="Title" required>
+                    <textarea name="content" placeholder="Content" required rows="10"></textarea>
+                    <input type="text" name="type" placeholder="Type" required>
+                    <input type="text" name="author" placeholder="Author" required>
+                    <button class="full-width" type="submit">
+                        <%= submit %>
+                    </button>
+                </form>
+                <% } %>
+        </div>
+    </div>
+<%- include("partials/footer.ejs") %>

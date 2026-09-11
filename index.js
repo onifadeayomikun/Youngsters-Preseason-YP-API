@@ -210,7 +210,7 @@ app.get('/dashboard', requireRole('admin', 'editor'), (req, res) => {
   res.json({ message: `Welcome, ${req.user.role}` });
 });
 
-app.post("/add/clubs", async (req, res) => {
+app.post("/info/clubs", async (req, res) => {
   const { name, slang, country, city, seasonsAvailable } = req.body;   
   try {
     const response = await axios.post(`${API_URL}/v1/clubs`, {
