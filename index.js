@@ -246,12 +246,22 @@ app.get("/new", (req, res) => {
   
 })
 
-app.get("/modify", (req, res) => {
-  if (req.isAuthenticated()) {
-    res.render("modify.ejs", { submit: "Update Club" });
-  } else {
-    res.redirect("/login");
+app.get("/modify/:club", async (req, res) => {
+  try {
+    const club = req.params.club;
+    const response = await axios.get(`${API_URL}/v1/club/${club}`);
+    if (req.isAuthenticated()) {
+      res.render("modify.ejs", { 
+        club: response.data,
+        submit: "Update Club" 
+      });
+    } else {
+      res.redirect("/login");
+    }  
+  } catch (error) {
+    res.send("Error getting Modify page");
   }
+
 })
 
 app.post("/info/clubs", async (req, res) => {
