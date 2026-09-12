@@ -237,14 +237,14 @@ app.get('/dashboard', requireRole('admin', 'editor'), (req, res) => {
   res.json({ message: `Welcome, ${req.user.role}` });
 });
 
-app.get("/new", (req, res) => {
+app.get("/newclub", (req, res) => {
   if (req.isAuthenticated()) {
-    res.render("modify.ejs", { submit: "Create Club" });
+    res.render("modifyclub.ejs", { submit: "Create Club" });
   } else {
     res.redirect("/login");
   }
   
-})
+});
 
 app.get("/modify/:club", async (req, res) => {
   try {
@@ -263,14 +263,23 @@ app.get("/modify/:club", async (req, res) => {
   }
 });
 
+app.get("/newplayer", (req, res) => {
+  if (req.isAuthenticated()) {
+    res.render("modifyplayer.ejs", { submit: "Create Player" });
+  } else {
+    res.redirect("/login");
+  }
+  
+});
+
 app.get("/modify/:player", async (req, res) => {
   try {
     const player = req.params.player;
-    const response = await axios.get(`${API_URL}/v1/player/${club}`);
+    const response = await axios.get(`${API_URL}/v1/player/${player}`);
     if (req.isAuthenticated()) {
-      res.render("modifyclub.ejs", { 
+      res.render("modifyplayer.ejs", { 
         club: response.data,
-        submit: "Update Club" 
+        submit: "Update Player" 
       });
     } else {
       res.redirect("/login");

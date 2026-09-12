@@ -153,6 +153,16 @@ app.get("/v1/players-clubs", async (req, res) => {
     res.json(players.rows);
 });
 
+//This GET route below handles a specific player's name, position and nationality
+app.get("/v1/player/:player", async (req, res) => {
+    const player = req.params.player;
+    const players = await db.query(`SELECT * FROM players WHERE player_name = $1;`, [player]);
+    if (!players.rows || players.rows.length === 0) {
+        return res.status(404).json({ error: "Players not found" });
+    } 
+    res.json(players.rows);   
+});
+
 app.get("/v1/players/:player", async (req, res) => {
     const player = req.params.player;
     const foundPlayer = await db.query(`
