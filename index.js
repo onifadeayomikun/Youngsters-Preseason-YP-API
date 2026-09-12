@@ -265,7 +265,8 @@ app.get("/modify/:club", async (req, res) => {
 })
 
 app.post("/info/clubs", async (req, res) => {
-  const { name, slang, country, city, seasonsAvailable } = req.body;   
+  const { name, slang, country, city } = req.body;   
+  const seasonsAvailable = Number(req.body.seasons_available);
   try {
     const response = await axios.post(`${API_URL}/v1/clubs`, {
       name: name,
@@ -274,6 +275,7 @@ app.post("/info/clubs", async (req, res) => {
       city: city,
       seasonsAvailable: seasonsAvailable
     });
+    console.log(response);
     res.redirect("/info/club");
   } catch (error) {
     console.error("Error creating club: ", error);
