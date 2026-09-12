@@ -251,7 +251,7 @@ app.get("/modify/:club", async (req, res) => {
     const club = req.params.club;
     const response = await axios.get(`${API_URL}/v1/club/${club}`);
     if (req.isAuthenticated()) {
-      res.render("modify.ejs", { 
+      res.render("modifyclub.ejs", { 
         club: response.data,
         submit: "Update Club" 
       });
@@ -283,41 +283,40 @@ app.post("/info/clubs", async (req, res) => {
   }       
 });
 
-// Create a new Club
-app.post("/api/posts", async (req, res) => {
+app.post("/info/players", async (req, res) => {
+  const { playerName, nationality, position } = req.body;
+
   try {
-    const response = await axios.post(`${API_URL}/posts`, req.body);
-    console.log(response.data);
-    res.redirect("/");
+    await axios.post(`${API_URL}/v1/players`, {
+      players: [{ playerName, nationality, position }],
+    });
+    res.redirect("/info/players");
   } catch (error) {
-    res.status(500).json({ message: "Error creating post" });
+    console.error("Error creating player:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error creating player");
   }
 });
 
-// // Partially update a post
-// app.post("/api/posts/:id", async (req, res) => {
-//   console.log("called");
-//   try {
-//     const response = await axios.patch(
-//       `${API_URL}/posts/${req.params.id}`,
-//       req.body
-//     );
-//     console.log(response.data);
-//     res.redirect("/");
-//   } catch (error) {
-//     res.status(500).json({ message: "Error updating post" });
-//   }
-// });
+app.post("/info/clubs/:club/preseason/:season", async (req, res) => {
+  const { club, season } = req.params;
+  const { player, age, appearances } = req.body;
 
-// // Delete a post
-// app.get("/api/posts/delete/:id", async (req, res) => {
-//   try {
-//     await axios.delete(`${API_URL}/posts/${req.params.id}`);
-//     res.redirect("/");
-//   } catch (error) {
-//     res.status(500).json({ message: "Error deleting post" });
-//   }
-// });
+  try {
+    await axios.post(
+      `${API_URL}/v1/clubs/${encodeURIComponent(club)}/players/${encodeURIComponent(player)}/preseason/${encodeURIComponent(season)}`,
+      {
+        age: Number(age),
+        appearances: Number(appearances),
+      }
+    );
+    res.redirect(`/info/clubs/${encodeURIComponent(club)}/preseason/${encodeURIComponent(season)}`);
+  } catch (error) {
+    console.error("Error adding player preseason data:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error adding player preseason data");
+  }
+});
+
+
 
 passport.use("local", new Strategy({ passReqToCallback: true }, async function verify (req, username, password, cb){
     try {
