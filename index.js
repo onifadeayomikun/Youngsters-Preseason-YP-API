@@ -170,7 +170,13 @@ app.get("/info/clubs/:club/preseason/:season", async (req, res) => {
     try {
         const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}`);
       if (req.isAuthenticated()) {
-        res.render("index.ejs", { response: response.data, currentPath: req.path });
+        res.render("index.ejs", {
+          response: response.data,
+          currentPath: req.path,
+          showPreseasonPlayerForm: true,
+          club,
+          season,
+        });
       } else {
         res.redirect("/login");
       }        
@@ -246,7 +252,7 @@ app.get("/newclub", (req, res) => {
   
 });
 
-app.get("/modify/:club", async (req, res) => {
+app.get("/modify/club/:club", async (req, res) => {
   try {
     const club = req.params.club;
     const response = await axios.get(`${API_URL}/v1/club/${club}`);
@@ -272,7 +278,7 @@ app.get("/newplayer", (req, res) => {
   
 });
 
-app.get("/modify/:player", async (req, res) => {
+app.get("/modify/player/:player", async (req, res) => {
   try {
     const player = req.params.player;
     const response = await axios.get(`${API_URL}/v1/player/${player}`);
@@ -338,6 +344,61 @@ app.post("/info/clubs/:club/preseason/:season", async (req, res) => {
   } catch (error) {
     console.error("Error adding player preseason data:", error.response?.data || error.message);
     return res.status(error.response?.status || 500).send("Error adding player preseason data");
+  }
+});
+
+app.get("/modify/clubs/:club/players/:player/preseason/:season", async (req, res) => {
+  const { club, player, season } = req.params;
+
+  try {
+    const response = await axios.get(
+      `${API_URL}/v1/clubs/${encodeURIComponent(club)}/preseason/${encodeURIComponent(season)}`
+    );
+    const record = response.data.find(
+      (item) => item.player_name.toLowerCase() === player.toLowerCase()
+    );
+
+    if (!record) {
+      return res.status(404).send("Player preseason record not found");
+    }
+    if (!req.isAuthenticated()) {
+      return res.redirect("/login");
+    }
+
+    res.render("modifyindex.ejs", { club, player, season, record });
+  } catch (error) {
+    console.error("Error loading preseason record:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error loading preseason record");
+  }
+});
+
+app.post("/modify/clubs/:club/players/:player/preseason/:season", async (req, res) => {
+  const { club, player, season } = req.params;
+  const { age, appearances } = req.body;
+
+  try {
+    await axios.patch(
+      `${API_URL}/v1/clubs/${encodeURIComponent(club)}/players/${encodeURIComponent(player)}/preseason/${encodeURIComponent(season)}`,
+      { age: Number(age), appearances: Number(appearances) }
+    );
+    res.redirect(`/info/clubs/${encodeURIComponent(club)}/preseason/${encodeURIComponent(season)}`);
+  } catch (error) {
+    console.error("Error updating preseason record:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error updating preseason record");
+  }
+});
+
+app.post("/info/clubs/:club/players/:player/preseason/:season/delete", async (req, res) => {
+  const { club, player, season } = req.params;
+
+  try {
+    await axios.delete(
+      `${API_URL}/v1/clubs/${encodeURIComponent(club)}/players/${encodeURIComponent(player)}/preseason/${encodeURIComponent(season)}`
+    );
+    res.redirect(`/info/clubs/${encodeURIComponent(club)}/preseason/${encodeURIComponent(season)}`);
+  } catch (error) {
+    console.error("Error deleting preseason record:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error deleting preseason record");
   }
 });
 

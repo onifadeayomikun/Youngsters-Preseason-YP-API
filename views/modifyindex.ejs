@@ -1,0 +1,19 @@
+<%- include("partials/header.ejs") %>
+    <div class="jumbotron centered">
+        <div class="container">
+            <h1 class="display-3"><a href="/info/clubs">YPT</a></h1>
+            <p class="lead">Track every youngster the major clubs have taken for preseason</p>
+            <hr>
+
+            <form id="editForm" class="form" method="post" action="/modify/clubs/<%= encodeURIComponent(club) %>/players/<%= encodeURIComponent(player) %>/preseason/<%= encodeURIComponent(season) %>">
+                <label>Player</label>
+                <input type="text" value="<%= record.player_name %>" readonly>
+                <label>Age</label>
+                <input type="number" name="age" value="<%= record.age %>" min="13" max="21" required>
+                <label>Appearances</label>
+                <input type="number" name="appearances" value="<%= record.appearances %>" min="0" step="1" required>
+                <button class="full-width" type="submit">Update preseason record</button>
+            </form>
+        </div>
+    </div>
+<%- include("partials/footer.ejs") %>

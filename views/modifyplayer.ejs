@@ -6,7 +6,7 @@
             <hr>
 
             <% if (locals.club) { %>
-                <form id="editForm" class="form" method="post" action="/modify/<%=club[0].player_name%>">
+                <form id="editForm" class="form" method="post" action="/modify/player/<%=club[0].player_name%>">
                     <input type="text" name="playerName" value="<%=club[0].player_name%>">
                     <input type="text" name="position" value="<%=club[0].position %>">
                     <input type="text" name="nationality" value="<%=club[0].nationality%>">

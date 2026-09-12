@@ -6,7 +6,7 @@
             <hr>
 
             <% if (locals.club) { %>
-                <form id="editForm" class="form" method="post" action="/modify/<%=club[0].name%>">
+                <form id="editForm" class="form" method="post" action="/modify/club/<%=club[0].name%>">
                     <input type="text" name="name" value="<%=club[0].name%>">
                     <input type="text" name="slang" value="<%=club[0].slang %>">
                     <input type="text" name="country" value="<%=club[0].country%>">
