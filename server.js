@@ -352,21 +352,22 @@ app.patch("/v1/clubs/:club", async (req, res) => {
     const { name, slang, country, city, seasons_available } = req.body;
 
     const existingClub = await db.query(`SELECT * FROM clubs WHERE lower(name) = lower($1);`, [club]);
-    if (existingClub.rows.length <= 1) {
+    if (existingClub.rows.length !== 1) {
         return res.status(404).json({
             error: "Invalid Club Name"
         })
     }
 
-    const updatedName = name || existingClub.rows[0].name;
-    const updatedSlang = slang || existingClub.rows[0].slang; 
-    const updatedCountry = country || existingClub.rows[0].country;
-    const updatedCity = city || existingClub.rows[0].city;
-    const updatedSA = seasons_available || existingClub.rows[0].seasons_available;
+    const updatedName = name ?? existingClub.rows[0].name;
+    const updatedSlang = slang ?? existingClub.rows[0].slang; 
+    const updatedCountry = country ?? existingClub.rows[0].country;
+    const updatedCity = city ?? existingClub.rows[0].city;
+    const updatedSA = seasons_available ?? existingClub.rows[0].seasons_available;
 
     const updatedClub = await db.query(`UPDATE Clubs
         SET name = $1, slang = $2, country = $3, city = $4, seasons_available = $5
-        WHERE lower(name) = lower($6);`, [ updatedName, updatedSlang, updatedCountry, updatedCity, updatedSA, club ]);
+        WHERE lower(name) = lower($6)
+        RETURNING *;`, [ updatedName, updatedSlang, updatedCountry, updatedCity, updatedSA, club ]);
     return res.status(200).json({
         message: "Club Data Updated Successfully",
         data: updatedClub.rows[0]
@@ -396,13 +397,14 @@ app.patch("/v1/players/:player", async (req, res) => {
     }
     console.log(existingPlayer);
 
-    const updatedPlayerName = player_name || existingPlayer.rows[0].player_name;
-    const updatedNationality = nationality || existingPlayer.rows[0].nationality; 
-    const updatedPosition = position || existingPlayer.rows[0].position;
+    const updatedPlayerName = player_name ?? existingPlayer.rows[0].player_name;
+    const updatedNationality = nationality ?? existingPlayer.rows[0].nationality; 
+    const updatedPosition = position ?? existingPlayer.rows[0].position;
 
     const updatedPlayer = await db.query(`UPDATE Players
         SET player_name = $1, nationality = $2, position = $3
-        WHERE lower(player_name) = lower($4);`, [ updatedPlayerName, updatedNationality, updatedPosition, player ]);
+        WHERE lower(player_name) = lower($4)
+        RETURNING *;`, [ updatedPlayerName, updatedNationality, updatedPosition, player ]);
     return res.status(200).json({
         message: "Player Data Updated Successfully",
         data: updatedPlayer.rows[0]
@@ -456,10 +458,13 @@ app.patch("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) 
 
         const statCheck = await db.query(`SELECT * FROM player_season_stats WHERE season_id = $1 
             AND player_id = $2 AND club_id = $3;`, [ seasonId, playerId, clubId ]);
+        if (statCheck.rows.length !== 1) {
+            return res.status(404).json({ error: "Player preseason data not found" });
+        }
         const statId = statCheck.rows[0].stat_id;   
             
-        const updatedAge = age || statCheck.rows[0].age ;
-        const updatedAppearances = appearances || statCheck.rows[0].appearances;
+        const updatedAge = age ?? statCheck.rows[0].age;
+        const updatedAppearances = appearances ?? statCheck.rows[0].appearances;
         console.log(updatedAge);
 
         const statsResult = await db.query(`UPDATE player_season_stats 
@@ -467,7 +472,7 @@ app.patch("/v1/clubs/:club/players/:player/preseason/:season", async (req, res) 
             WHERE stat_id = $6
             RETURNING *;`, [ clubId, seasonId, playerId, updatedAge, updatedAppearances, statId ]
         );
-        return res.status(201).json({
+        return res.status(200).json({
                 message: "Player season Data updated successfully",
                 data: statsResult.rows[0]
         });

@@ -7,17 +7,16 @@
 
             <% if (locals.club) { %>
                 <form id="editForm" class="form" method="post" action="/modify/<%=club[0].player_name%>">
-                    <input type="text" name="name" value="<%=club[0].position%>">
-                    <input type="text" name="slang" value="<%=club[0].nationality %>">
+                    <input type="text" name="playerName" value="<%=club[0].player_name%>">
+                    <input type="text" name="position" value="<%=club[0].position %>">
+                    <input type="text" name="nationality" value="<%=club[0].nationality%>">
                     <button class="full-width" type="submit"> <%= submit %> </button>
                 </form>
             <% } else {%>
-                <form id="newForm" class="form" method="post" action="/info/clubs">
-                    <input type="text" name="name" placeholder="Club Name" required>
-                    <input type="text" name="slang" placeholder="Slang" required>
-                    <input type="text" name="country" placeholder="Country" required>
-                    <input type="text" name="city" placeholder="City" required>
-                    <input type="text" name="seasons_available" placeholder="Seasons Available" required>
+                <form id="newForm" class="form" method="post" action="/info/players">
+                    <input type="text" name="playerName" placeholder="Player's Name" required>
+                    <input type="text" name="position" placeholder="Position" required>
+                    <input type="text" name="nationality" placeholder="Nationality" required>
                     <button class="full-width" type="submit">  <%= submit %> </button>
                 </form>
                 <% } %>

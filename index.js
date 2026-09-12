@@ -261,8 +261,24 @@ app.get("/modify/:club", async (req, res) => {
   } catch (error) {
     res.send("Error getting Modify page");
   }
+});
 
-})
+app.get("/modify/:player", async (req, res) => {
+  try {
+    const player = req.params.player;
+    const response = await axios.get(`${API_URL}/v1/player/${club}`);
+    if (req.isAuthenticated()) {
+      res.render("modifyclub.ejs", { 
+        club: response.data,
+        submit: "Update Club" 
+      });
+    } else {
+      res.redirect("/login");
+    }  
+  } catch (error) {
+    res.send("Error getting Modify page");
+  }
+});
 
 app.post("/info/clubs", async (req, res) => {
   const { name, slang, country, city } = req.body;   
@@ -292,8 +308,8 @@ app.post("/info/players", async (req, res) => {
     });
     res.redirect("/info/players");
   } catch (error) {
-    console.error("Error creating player:", error.response?.data || error.message);
-    return res.status(error.response?.status || 500).send("Error creating player");
+    console.error("Error creating player:", error.message);
+    return res.status(500).send("Error creating player");
   }
 });
 
@@ -316,7 +332,60 @@ app.post("/info/clubs/:club/preseason/:season", async (req, res) => {
   }
 });
 
+app.patch("/info/clubs/:club", async (req, res) => {
+  const { club } = req.params;
+  const { name, slang, country, city, seasons_available } = req.body;
 
+  try {
+    await axios.patch(`${API_URL}/v1/clubs/${encodeURIComponent(club)}`, {
+      name,
+      slang,
+      country,
+      city,
+      seasons_available: seasons_available === "" ? undefined : Number(seasons_available),
+    });
+    res.redirect("/info/club");
+  } catch (error) {
+    console.error("Error updating club:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error updating club");
+  }
+});
+
+app.patch("/info/players/:player", async (req, res) => {
+  const { player } = req.params;
+  const { player_name, nationality, position } = req.body;
+
+  try {
+    await axios.patch(`${API_URL}/v1/players/${encodeURIComponent(player)}`, {
+      player_name,
+      nationality,
+      position,
+    });
+    res.redirect("/info/players");
+  } catch (error) {
+    console.error("Error updating player:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error updating player");
+  }
+});
+
+app.patch("/info/clubs/:club/players/:player/preseason/:season", async (req, res) => {
+  const { club, player, season } = req.params;
+  const { age, appearances } = req.body;
+
+  try {
+    await axios.patch(
+      `${API_URL}/v1/clubs/${encodeURIComponent(club)}/players/${encodeURIComponent(player)}/preseason/${encodeURIComponent(season)}`,
+      {
+        age: age === "" ? undefined : Number(age),
+        appearances: appearances === "" ? undefined : Number(appearances),
+      }
+    );
+    res.redirect(`/info/clubs/${encodeURIComponent(club)}/preseason/${encodeURIComponent(season)}`);
+  } catch (error) {
+    console.error("Error updating player preseason data:", error.response?.data || error.message);
+    return res.status(error.response?.status || 500).send("Error updating player preseason data");
+  }
+});
 
 passport.use("local", new Strategy({ passReqToCallback: true }, async function verify (req, username, password, cb){
     try {
