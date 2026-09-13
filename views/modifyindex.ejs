@@ -7,7 +7,7 @@
     <hr>
 
     <% if (locals.club) { %>
-      <form id="editPlayerStatForm" class="form" method="post" action="/modify/clubs/<%= encodeURIComponent(club.name) %>/season/<%= encodeURIComponent(club.season_label) %>/players/<%= encodeURIComponent(club.player_name) %>">
+      <form id="editPlayerStatForm" class="form" method="post" action="/modify/clubs/<%= encodeURIComponent(club[0].name) %>/season/<%= encodeURIComponent(club[0].season_label) %>/players/<%= encodeURIComponent(club[0].player_name) %>">
         <label for="player">Player</label>
         <input id="player" type="text" value="<%= club[0].player_name %>" readonly>
 

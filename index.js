@@ -372,8 +372,44 @@ app.post("/info/playerstats", async (req, res) => {
 });
 
 //For patch or modify
-app.post("/modify/clubs/:club/players/:player/season/:season", async (req, res) => {
-  const { club, player, season } = req.params;
+app.post("/modify/club/:club", async (req, res) => {
+  const { club } = req.params;
+  const { name, slang, country, city, seasons_available } = req.body;
+
+  try {
+    await axios.patch(`${API_URL}/v1/clubs/${encodeURIComponent(club)}`, {
+      name,
+      slang,
+      country,
+      city,
+      seasons_available: Number(seasons_available),
+    });
+    res.redirect("/info/club");
+  } catch (error) {
+    console.error("Error updating club:", error.message);
+    return res.status(500).send("Error updating club");
+  }
+});
+
+app.post("/modify/player/:player", async (req, res) => {
+  const { player } = req.params;
+  const { playerName, nationality, position } = req.body;
+
+  try {
+    await axios.patch(`${API_URL}/v1/players/${encodeURIComponent(player)}`, {
+      player_name: playerName,
+      nationality,
+      position,
+    });
+    res.redirect("/info/players");
+  } catch (error) {
+    console.error("Error updating player:", error.message);
+    return res.status(500).send("Error updating player");
+  }
+});
+
+app.post("/modify/clubs/:club/season/:season/players/:player", async (req, res) => {
+  const { club, season, player } = req.params;
   const { age, appearances } = req.body;
 
   try {
@@ -383,11 +419,10 @@ app.post("/modify/clubs/:club/players/:player/season/:season", async (req, res) 
     );
     res.redirect(`/info/clubs/${encodeURIComponent(club)}/preseason/${encodeURIComponent(season)}`);
   } catch (error) {
-    console.error("Error updating preseason record:", error.response?.data || error.message);
-    return res.status(error.response?.status || 500).send("Error updating preseason record");
+    console.error("Error updating player stat:", error.message);
+    return res.status(500).send("Error updating player stat");
   }
 });
-
 
 
 passport.use("local", new Strategy({ passReqToCallback: true }, async function verify (req, username, password, cb){
