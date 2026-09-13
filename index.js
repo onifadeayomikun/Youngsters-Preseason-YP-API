@@ -371,7 +371,7 @@ app.post("/info/playerstats", async (req, res) => {
   }
 });
 
-//For patch or modify
+//For patch routes
 app.post("/modify/club/:club", async (req, res) => {
   const { club } = req.params;
   const { name, slang, country, city, seasons_available } = req.body;
@@ -424,6 +424,45 @@ app.post("/modify/clubs/:club/season/:season/players/:player", async (req, res) 
   }
 });
 
+//For DELETE routes
+app.get("/delete/club/:club", async (req, res) => {
+  const { club } = req.params;
+
+  try {
+    await axios.delete(`${API_URL}/v1/clubs/${encodeURIComponent(club)}`);
+    res.redirect("/info/club");
+  } catch (error) {
+    console.error("Error deleting club:", error.message);
+    return res.status(500).send("Error deleting club");
+  }
+});
+
+app.get("/delete/player/:player", async (req, res) => {
+  const { player } = req.params;
+
+  try {
+    await axios.delete(`${API_URL}/v1/players/${encodeURIComponent(player)}`);
+    res.redirect("/info/players");
+  } catch (error) {
+    console.error("Error deleting player:", error.message);
+    return res.status(500).send("Error deleting player");
+  }
+});
+
+app.post("/info/clubs/:club/season/:season/players/:player/delete", async (req, res) => {
+  const { club, player, season } = req.params;
+
+  try {
+    await axios.delete(
+      `${API_URL}/v1/clubs/${encodeURIComponent(club)}/season/${encodeURIComponent(season)}/players/${encodeURIComponent(player)}`
+    );
+    res.redirect(`/info/clubs/${encodeURIComponent(club)}/season/${encodeURIComponent(season)}`);
+  } catch (error) {
+    console.error("Error deleting player stat:", error.message);
+    return res.status(500).send("Error deleting player stat");
+  }
+});
+//Ensure only admin can access the delete routes
 
 passport.use("local", new Strategy({ passReqToCallback: true }, async function verify (req, username, password, cb){
     try {
