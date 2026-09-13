@@ -1,40 +1,51 @@
 <%- include("partials/header.ejs") %>
-    <div class="jumbotron centered">
-        <div class="container">
-            <h1 class="display-3"><a href="/info/clubs">YPT</a></h1>
-            <p class="lead">Track every youngster the major clubs have taken for preseason</p>
-            <hr>
 
-            <form id="editForm" class="form" method="post" action="/modify/clubs/<%= encodeURIComponent(club) %>/players/<%= encodeURIComponent(player) %>/preseason/<%= encodeURIComponent(season) %>">
-                <label>Player</label>
-                <input type="text" value="<%= record.player_name %>" readonly>
-                <label>Age</label>
-                <input type="number" name="age" value="<%= record.age %>" min="13" max="21" required>
-                <label>Appearances</label>
-                <input type="number" name="appearances" value="<%= record.appearances %>" min="0" step="1" required>
-                <button class="full-width" type="submit">Update preseason record</button>
-            </form>
+<div class="jumbotron centered">
+  <div class="container">
+    <h1 class="display-3"><a href="/info/clubs">YPT</a></h1>
+    <p class="lead">Track every youngster the major clubs have taken for preseason</p>
+    <hr>
 
-            <% if (locals.club) { %>
-                <form id="editForm" class="form" method="post" action="/modify/club/<%=club[0].name%>">
-                    <input type="text" name="name" value="<%=club[0].name%>">
-                    <input type="text" name="slang" value="<%=club[0].slang %>">
-                    <input type="text" name="country" value="<%=club[0].country%>">
-                    <input type="text" name="city" value="<%=club[0].city %>">
-                    <input type="text" name="seasons_available" value="<%=club[0].seasons_available %>">
-                    <button class="full-width" type="submit"> <%= submit %> </button>
-                </form>
-            <% } else {%>
-                <form id="newForm" class="form" method="post" action="/info/clubs">
-                    <input type="text" name="name" placeholder="Club Name" required>
-                    <input type="text" name="slang" placeholder="Slang" required>
-                    <input type="text" name="country" placeholder="Country" required>
-                    <input type="text" name="city" placeholder="City" required>
-                    <input type="text" name="seasons_available" placeholder="Seasons Available" required>
-                    <button class="full-width" type="submit">  <%= submit %> </button>
-                </form>
-                <% } %>
+    <% if (locals.club) { %>
+      <form id="editPlayerStatForm" class="form" method="post" action="/modify/clubs/<%= encodeURIComponent(club.name) %>/season/<%= encodeURIComponent(club.season_label) %>/players/<%= encodeURIComponent(club.player_name) %>">
+        <label for="player">Player</label>
+        <input id="player" type="text" value="<%= club[0].player_name %>" readonly>
 
-        </div>
-    </div>
+        <label for="club">Club</label>
+        <input id="club" type="text" value="<%= club[0].name %>" readonly>
+
+        <label for="season">Season</label>
+        <input id="season" type="text" value="<%= club[0].season_label %>" readonly>
+
+        <label for="age">Age</label>
+        <input id="age" type="number" name="age" value="<%= club[0].age %>" min="13" max="21" required>
+
+        <label for="appearances">Appearances</label>
+        <input id="appearances" type="number" name="appearances" value="<%= club[0].appearances %>" min="0" step="1" required>
+
+        <button class="full-width" type="submit"><%= submit %></button>
+      </form>
+    <% } else { %>
+      <form id="newPlayerStatForm" class="form" method="post" action="/info/playerstats">
+        <label for="club">Club</label>
+        <input id="club" type="text" name="club" placeholder="Club name" required>
+
+        <label for="season">Season</label>
+        <input id="season" type="text" name="season" placeholder="e.g. 2023-24" required>
+
+        <label for="player">Player</label>
+        <input id="player" type="text" name="player" placeholder="Player name" required>
+
+        <label for="age">Age</label>
+        <input id="age" type="number" name="age" min="13" max="21" required>
+
+        <label for="appearances">Appearances</label>
+        <input id="appearances" type="number" name="appearances" min="0" step="1" required>
+
+        <button class="full-width" type="submit"><%= submit %></button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
 <%- include("partials/footer.ejs") %>
