@@ -109,6 +109,31 @@ app.get("/v1/clubs/:club/preseason/:season", async (req, res) => {
   }
 });
 
+app.get("/v1/clubs/:club/preseason/:season/players/:player", async (req, res) => {
+  try {
+    const clubName = req.params.club;
+    const season = req.params.season;
+    const player = req.params.player;
+    
+    const playerSeason = await db.query(`
+        SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
+        players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
+        FROM player_season_stats
+        FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
+        FULL JOIN players ON player_season_stats.player_id = players.player_id
+        JOIN seasons ON player_season_stats.season_id = seasons.season_id
+        WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2 AND LOWER(players.player_name) = LOWER($3)`, [clubName, season, player]);
+    if (!playerSeason.rows || playerSeason.rows.length === 0) {
+      return res.status(404).json({ error: "Season not found" });
+    }
+
+    res.json(playerSeason.rows);
+  } catch (error) {
+    console.error("Error fetching player's season:", error);
+    return res.status(500).json({ error: "An unexpected error occurred while fetching the player's season" });
+  }
+});
+
 app.get("/v1/seasons/:season", async (req, res) => {
   const season = req.params.season;
     

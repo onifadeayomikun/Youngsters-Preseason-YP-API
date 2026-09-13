@@ -14,6 +14,27 @@
                 <input type="number" name="appearances" value="<%= record.appearances %>" min="0" step="1" required>
                 <button class="full-width" type="submit">Update preseason record</button>
             </form>
+
+            <% if (locals.club) { %>
+                <form id="editForm" class="form" method="post" action="/modify/club/<%=club[0].name%>">
+                    <input type="text" name="name" value="<%=club[0].name%>">
+                    <input type="text" name="slang" value="<%=club[0].slang %>">
+                    <input type="text" name="country" value="<%=club[0].country%>">
+                    <input type="text" name="city" value="<%=club[0].city %>">
+                    <input type="text" name="seasons_available" value="<%=club[0].seasons_available %>">
+                    <button class="full-width" type="submit"> <%= submit %> </button>
+                </form>
+            <% } else {%>
+                <form id="newForm" class="form" method="post" action="/info/clubs">
+                    <input type="text" name="name" placeholder="Club Name" required>
+                    <input type="text" name="slang" placeholder="Slang" required>
+                    <input type="text" name="country" placeholder="Country" required>
+                    <input type="text" name="city" placeholder="City" required>
+                    <input type="text" name="seasons_available" placeholder="Seasons Available" required>
+                    <button class="full-width" type="submit">  <%= submit %> </button>
+                </form>
+                <% } %>
+
         </div>
     </div>
 <%- include("partials/footer.ejs") %>

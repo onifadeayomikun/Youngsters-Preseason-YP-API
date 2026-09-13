@@ -168,7 +168,7 @@ app.get("/info/clubs/:club/preseason/:season", async (req, res) => {
     const club = req.params.club;
     const season = req.params.season;
     try {
-        const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}`);
+      const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}`);
       if (req.isAuthenticated()) {
         res.render("index.ejs", {
           response: response.data,
@@ -284,6 +284,31 @@ app.get("/modify/player/:player", async (req, res) => {
     const response = await axios.get(`${API_URL}/v1/player/${player}`);
     if (req.isAuthenticated()) {
       res.render("modifyplayer.ejs", { 
+        club: response.data,
+        submit: "Update Player" 
+      });
+    } else {
+      res.redirect("/login");
+    }  
+  } catch (error) {
+    res.send("Error getting Modify page");
+  }
+});
+
+app.get("/newplayerstat", (req, res) => {
+  if (req.isAuthenticated()) {
+    res.render("modifyindex.ejs", { submit: "Create Player Stats" });
+  } else {
+    res.redirect("/login");
+  }
+});
+
+app.get("/modify/clubs/:club/season/:season/playerstat/:player", async (req, res) => {
+  try {
+    const { club, season, player } = req.params;
+    const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}/players/${player}`);
+    if (req.isAuthenticated()) {
+      res.render("modifyindex.ejs", { 
         club: response.data,
         submit: "Update Player" 
       });
