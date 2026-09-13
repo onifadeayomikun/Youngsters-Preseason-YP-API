@@ -41,6 +41,12 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use((req, res, next) => {
+  res.locals.isPrivileged = req.isAuthenticated?.() &&
+    ["admin", "editor"].includes(req.user?.role);
+  next();
+});
+
 function requireRole(...allowedRoles) {
   return (req, res, next) => {
     if (!req.isAuthenticated()) {
@@ -243,7 +249,7 @@ app.get('/dashboard', requireRole('admin', 'editor'), (req, res) => {
   res.json({ message: `Welcome, ${req.user.role}` });
 });
 
-app.get("/newclub", (req, res) => {
+app.get("/newclub", requireRole("admin", "editor"), (req, res) => {
   if (req.isAuthenticated()) {
     res.render("modifyclub.ejs", { submit: "Create Club" });
   } else {
@@ -252,7 +258,7 @@ app.get("/newclub", (req, res) => {
   
 });
 
-app.get("/modify/club/:club", async (req, res) => {
+app.get("/modify/club/:club", requireRole("admin", "editor"), async (req, res) => {
   try {
     const club = req.params.club;
     const response = await axios.get(`${API_URL}/v1/club/${club}`);
@@ -269,7 +275,7 @@ app.get("/modify/club/:club", async (req, res) => {
   }
 });
 
-app.get("/newplayer", (req, res) => {
+app.get("/newplayer", requireRole("admin", "editor"), (req, res) => {
   if (req.isAuthenticated()) {
     res.render("modifyplayer.ejs", { submit: "Create Player" });
   } else {
@@ -278,7 +284,7 @@ app.get("/newplayer", (req, res) => {
   
 });
 
-app.get("/modify/player/:player", async (req, res) => {
+app.get("/modify/player/:player", requireRole("admin", "editor"), async (req, res) => {
   try {
     const player = req.params.player;
     const response = await axios.get(`${API_URL}/v1/player/${player}`);
@@ -295,7 +301,7 @@ app.get("/modify/player/:player", async (req, res) => {
   }
 });
 
-app.get("/newplayerstat", (req, res) => {
+app.get("/newplayerstat", requireRole("admin", "editor"), (req, res) => {
   if (req.isAuthenticated()) {
     res.render("modifyindex.ejs", { submit: "Create Player Stats" });
   } else {
@@ -303,7 +309,7 @@ app.get("/newplayerstat", (req, res) => {
   }
 });
 
-app.get("/modify/clubs/:club/season/:season/players/:player", async (req, res) => {
+app.get("/modify/clubs/:club/season/:season/players/:player", requireRole("admin", "editor"), async (req, res) => {
   try {
     const { club, season, player } = req.params;
     const response = await axios.get(`${API_URL}/v1/clubs/${club}/preseason/${season}/players/${player}`);
@@ -323,7 +329,7 @@ app.get("/modify/clubs/:club/season/:season/players/:player", async (req, res) =
   }
 });
 
-app.post("/info/clubs", async (req, res) => {
+app.post("/info/clubs", requireRole("admin", "editor"), async (req, res) => {
   const { name, slang, country, city } = req.body;   
   const seasonsAvailable = Number(req.body.seasons_available);
   try {
@@ -342,7 +348,7 @@ app.post("/info/clubs", async (req, res) => {
   }       
 });
 
-app.post("/info/players", async (req, res) => {
+app.post("/info/players", requireRole("admin", "editor"), async (req, res) => {
   const { playerName, nationality, position } = req.body;
 
   try {
@@ -356,7 +362,7 @@ app.post("/info/players", async (req, res) => {
   }
 });
 
-app.post("/info/playerstats", async (req, res) => {
+app.post("/info/playerstats", requireRole("admin", "editor"), async (req, res) => {
   const { club, season, player, age, appearances } = req.body;
 
   try {
@@ -372,7 +378,7 @@ app.post("/info/playerstats", async (req, res) => {
 });
 
 //For patch routes
-app.post("/modify/club/:club", async (req, res) => {
+app.post("/modify/club/:club", requireRole("admin", "editor"), async (req, res) => {
   const { club } = req.params;
   const { name, slang, country, city, seasons_available } = req.body;
 
@@ -391,7 +397,7 @@ app.post("/modify/club/:club", async (req, res) => {
   }
 });
 
-app.post("/modify/player/:player", async (req, res) => {
+app.post("/modify/player/:player", requireRole("admin", "editor"), async (req, res) => {
   const { player } = req.params;
   const { playerName, nationality, position } = req.body;
 
@@ -408,7 +414,7 @@ app.post("/modify/player/:player", async (req, res) => {
   }
 });
 
-app.post("/modify/clubs/:club/season/:season/players/:player", async (req, res) => {
+app.post("/modify/clubs/:club/season/:season/players/:player", requireRole("admin", "editor"), async (req, res) => {
   const { club, season, player } = req.params;
   const { age, appearances } = req.body;
 
@@ -425,7 +431,7 @@ app.post("/modify/clubs/:club/season/:season/players/:player", async (req, res) 
 });
 
 //For DELETE routes
-app.get("/delete/club/:club", async (req, res) => {
+app.get("/delete/club/:club", requireRole("admin", "editor"), async (req, res) => {
   const { club } = req.params;
 
   try {
@@ -437,7 +443,7 @@ app.get("/delete/club/:club", async (req, res) => {
   }
 });
 
-app.get("/delete/player/:player", async (req, res) => {
+app.get("/delete/player/:player", requireRole("admin", "editor"), async (req, res) => {
   const { player } = req.params;
 
   try {
@@ -449,7 +455,7 @@ app.get("/delete/player/:player", async (req, res) => {
   }
 });
 
-app.post("/info/clubs/:club/season/:season/players/:player/delete", async (req, res) => {
+app.post("/info/clubs/:club/season/:season/players/:player/delete", requireRole("admin", "editor"), async (req, res) => {
   const { club, player, season } = req.params;
 
   try {

@@ -5,7 +5,7 @@
     <h1 class="display-3"><a href="/info/clubs">YPT</a></h1>
     <div class="container-lead-a">
       <p class="lead">Track every youngster the major clubs have taken for preseason from 2023-24 season</p>
-      <% if (locals.showPreseasonPlayerForm) { %>
+      <% if (locals.showPreseasonPlayerForm && locals.isPrivileged) { %>
         <a href="/newplayerstat" class="leadTag">
           New Player Stat
           <svg class="svgTag" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -27,7 +27,7 @@
             <th>Nationality</th>
             <th>Age</th>
             <th>Appearances</th>
-            <% if (locals.showPreseasonPlayerForm) { %>
+            <% if (locals.showPreseasonPlayerForm && locals.isPrivileged) { %>
               <th>Actions</th>
             <% } %>
           </tr>
@@ -49,7 +49,7 @@
               <td><%= club.nationality %></td>
               <td><%= club.age %></td>
               <td><%= club.appearances %></td>
-              <% if (locals.showPreseasonPlayerForm) { %>
+              <% if (locals.showPreseasonPlayerForm && locals.isPrivileged) { %>
                 <td class="text-nowrap">
                   <a
                     href="/modify/clubs/<%= encodeURIComponent(club.name) %>/season/<%= encodeURIComponent(club.season_label) %>/players/<%= encodeURIComponent(club.player_name) %>"
@@ -73,7 +73,7 @@
 
             <% if (nextClub && club.name === nextClub.name && club.season_label !== nextClub.season_label) { %>
               <tr>
-                <td colspan="<%= locals.showPreseasonPlayerForm ? 8 : 7 %>" style="padding: 0 8px;">
+                <td colspan="<%= locals.showPreseasonPlayerForm && locals.isPrivileged ? 8 : 7 %>" style="padding: 0 8px;">
                   <hr style="margin: 7px 0;">
                 </td>
               </tr>
@@ -81,7 +81,7 @@
 
             <% if (nextClub && club.name !== nextClub.name) { %>
               <tr>
-                <td colspan="<%= locals.showPreseasonPlayerForm ? 8 : 7 %>"><br></td>
+                <td colspan="<%= locals.showPreseasonPlayerForm && locals.isPrivileged ? 8 : 7 %>"><br></td>
               </tr>
             <% } %>
           <% }) %>
