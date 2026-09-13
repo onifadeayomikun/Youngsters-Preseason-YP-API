@@ -431,7 +431,7 @@ app.post("/modify/clubs/:club/season/:season/players/:player", requireRole("admi
 });
 
 //For DELETE routes
-app.get("/delete/club/:club", requireRole("admin", "editor"), async (req, res) => {
+app.get("/delete/club/:club", requireRole("admin"), async (req, res) => {
   const { club } = req.params;
 
   try {
@@ -443,7 +443,7 @@ app.get("/delete/club/:club", requireRole("admin", "editor"), async (req, res) =
   }
 });
 
-app.get("/delete/player/:player", requireRole("admin", "editor"), async (req, res) => {
+app.get("/delete/player/:player", requireRole("admin"), async (req, res) => {
   const { player } = req.params;
 
   try {
@@ -455,7 +455,7 @@ app.get("/delete/player/:player", requireRole("admin", "editor"), async (req, re
   }
 });
 
-app.post("/info/clubs/:club/season/:season/players/:player/delete", requireRole("admin", "editor"), async (req, res) => {
+app.post("/info/clubs/:club/season/:season/players/:player/delete", requireRole("admin"), async (req, res) => {
   const { club, player, season } = req.params;
 
   try {
@@ -468,7 +468,6 @@ app.post("/info/clubs/:club/season/:season/players/:player/delete", requireRole(
     return res.status(500).send("Error deleting player stat");
   }
 });
-//Ensure only admin can access the delete routes
 
 passport.use("local", new Strategy({ passReqToCallback: true }, async function verify (req, username, password, cb){
     try {
