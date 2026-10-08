@@ -38,7 +38,7 @@ app.get("/v1/clubs", async (req, res) => {
 
 // GET route for all clubs with only club data
 app.get("/v1/club", async (req, res) => {
-    const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available
+    const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.country_code, clubs.city, clubs.seasons_available
     FROM clubs ORDER BY clubs.club_id`);
     if (!clubs) {
         return res.status(404).json({ error: "Clubs not found" });
@@ -134,6 +134,14 @@ app.get("/v1/clubs/:club/preseason/:season/players/:player", async (req, res) =>
   }
 });
 
+app.get("/v1/seasons", async (req, res) => {
+    const seasons = await db.query(`SELECT * FROM seasons ORDER BY seasons.season_id`);
+    if (!seasons) {
+        return res.status(404).json({ error: "Seasons not found" });
+    }    
+    res.json(seasons.rows);    
+});
+
 app.get("/v1/seasons/:season", async (req, res) => {
   const season = req.params.season;
     
@@ -208,11 +216,11 @@ app.get("/v1/players/:player", async (req, res) => {
 });
 
 app.post("/v1/clubs", async (req, res) => {
-    const { name, slang, country, city, seasonsAvailable } = req.body;
+    const { name, slang, country, country_code, city, seasonsAvailable } = req.body;
 
-        if (!name || !country || !city) {
+        if (!name || !country || !city || !/^[A-Z]{2}$/.test(country_code ?? "")) {
             return res.status(400).json({
-                error: "name, country, and city are required",
+                error: "name, country, city, and a two-letter uppercase country_code are required",
             });
         }
         if (!slang || typeof slang !== "string") {
@@ -234,8 +242,8 @@ app.post("/v1/clubs", async (req, res) => {
             });
 
         } else {
-            const newClub = await db.query(`INSERT INTO clubs (name, slang, country, city, seasons_available)
-            VALUES ($1, $2, $3, $4, $5)`, [ name, slang, country, city, seasonsAvailable ] );
+            const newClub = await db.query(`INSERT INTO clubs (name, slang, country, country_code, city, seasons_available)
+            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`, [ name, slang, country, country_code, city, seasonsAvailable ] );
             res.status(201).json({
             message: 'Club inserted successfully',
             data: newClub.rows[0]
@@ -384,7 +392,11 @@ app.patch("/v1/clubs/:club", async (req, res) => {
         })
     }
   try {
-    const { name, slang, country, city, seasons_available } = req.body;
+    const { name, slang, country, country_code, city, seasons_available } = req.body;
+
+    if (country_code !== undefined && !/^[A-Z]{2}$/.test(country_code)) {
+        return res.status(400).json({ error: "country_code must be a two-letter uppercase code" });
+    }
 
     const existingClub = await db.query(`SELECT * FROM clubs WHERE lower(name) = lower($1);`, [club]);
     if (existingClub.rows.length !== 1) {
@@ -396,13 +408,14 @@ app.patch("/v1/clubs/:club", async (req, res) => {
     const updatedName = name ?? existingClub.rows[0].name;
     const updatedSlang = slang ?? existingClub.rows[0].slang; 
     const updatedCountry = country ?? existingClub.rows[0].country;
+    const updatedCountryCode = country_code ?? existingClub.rows[0].country_code;
     const updatedCity = city ?? existingClub.rows[0].city;
     const updatedSA = seasons_available ?? existingClub.rows[0].seasons_available;
 
     const updatedClub = await db.query(`UPDATE Clubs
-        SET name = $1, slang = $2, country = $3, city = $4, seasons_available = $5
-        WHERE lower(name) = lower($6)
-        RETURNING *;`, [ updatedName, updatedSlang, updatedCountry, updatedCity, updatedSA, club ]);
+        SET name = $1, slang = $2, country = $3, country_code = $4, city = $5, seasons_available = $6
+        WHERE lower(name) = lower($7)
+        RETURNING *;`, [ updatedName, updatedSlang, updatedCountry, updatedCountryCode, updatedCity, updatedSA, club ]);
     return res.status(200).json({
         message: "Club Data Updated Successfully",
         data: updatedClub.rows[0]

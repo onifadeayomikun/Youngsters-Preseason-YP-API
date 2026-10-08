@@ -10,6 +10,7 @@
                     <input type="text" name="name" value="<%=club[0].name%>">
                     <input type="text" name="slang" value="<%=club[0].slang %>">
                     <input type="text" name="country" value="<%=club[0].country%>">
+                    <input type="text" name="country_code" value="<%=club[0].country_code ?? ''%>" placeholder="Country code (e.g. GB)" pattern="[A-Z]{2}" maxlength="2" required>
                     <input type="text" name="city" value="<%=club[0].city %>">
                     <input type="text" name="seasons_available" value="<%=club[0].seasons_available %>">
                     <button class="full-width" type="submit"> <%= submit %> </button>
@@ -19,6 +20,7 @@
                     <input type="text" name="name" placeholder="Club Name" required>
                     <input type="text" name="slang" placeholder="Slang" required>
                     <input type="text" name="country" placeholder="Country" required>
+                    <input type="text" name="country_code" placeholder="Country code (e.g. GB)" pattern="[A-Z]{2}" maxlength="2" required>
                     <input type="text" name="city" placeholder="City" required>
                     <input type="text" name="seasons_available" placeholder="Seasons Available" required>
                     <button class="full-width" type="submit">  <%= submit %> </button>

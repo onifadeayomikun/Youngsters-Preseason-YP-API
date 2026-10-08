@@ -330,13 +330,14 @@ app.get("/modify/clubs/:club/season/:season/players/:player", requireRole("admin
 });
 
 app.post("/info/clubs", requireRole("admin", "editor"), async (req, res) => {
-  const { name, slang, country, city } = req.body;   
+  const { name, slang, country, country_code, city } = req.body;   
   const seasonsAvailable = Number(req.body.seasons_available);
   try {
     const response = await axios.post(`${API_URL}/v1/clubs`, {
       name: name,
       slang: slang,
       country: country,
+      country_code,
       city: city,
       seasonsAvailable: seasonsAvailable
     });
@@ -380,13 +381,14 @@ app.post("/info/playerstats", requireRole("admin", "editor"), async (req, res) =
 //For patch routes
 app.post("/modify/club/:club", requireRole("admin", "editor"), async (req, res) => {
   const { club } = req.params;
-  const { name, slang, country, city, seasons_available } = req.body;
+  const { name, slang, country, country_code, city, seasons_available } = req.body;
 
   try {
     await axios.patch(`${API_URL}/v1/clubs/${encodeURIComponent(club)}`, {
       name,
       slang,
       country,
+      country_code,
       city,
       seasons_available: Number(seasons_available),
     });
