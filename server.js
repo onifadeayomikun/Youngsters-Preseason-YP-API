@@ -36,26 +36,6 @@ app.get("/v1/clubs", async (req, res) => {
     res.json(clubs.rows);
 });
 
-// GET route for all clubs with only club data
-app.get("/v1/club", async (req, res) => {
-    const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.country_code, clubs.city, clubs.seasons_available
-    FROM clubs ORDER BY clubs.club_id`);
-    if (!clubs) {
-        return res.status(404).json({ error: "Clubs not found" });
-    }    
-    res.json(clubs.rows);
-});
-
-//GET route for a single club with only club data
-app.get("/v1/club/:club", async (req, res) => {
-    const club = req.params.club;
-    const response = await db.query(`SELECT * FROM Clubs WHERE name = $1;`, [club]);
-    if (!response) {
-        return res.status(404).json({ error: "Club not found" });
-    }    
-    res.json(response.rows);
-});
-
 app.get("/v1/clubs/:club", async (req, res) => {
     try {
         const clubName = req.params.club;
@@ -84,6 +64,35 @@ app.get("/v1/clubs/:club", async (req, res) => {
     }
 });
 
+// GET route for all clubs with only club data
+app.get("/v1/club", async (req, res) => {
+    const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.country_code, clubs.city, clubs.seasons_available
+    FROM clubs ORDER BY clubs.club_id`);
+    if (!clubs) {
+        return res.status(404).json({ error: "Clubs not found" });
+    }    
+    res.json(clubs.rows);
+});
+
+//GET route for a single club with only club data
+app.get("/v1/club/:club", async (req, res) => {
+    const club = req.params.club;
+    const response = await db.query(`SELECT * FROM Clubs WHERE name = $1;`, [club]);
+    if (!response) {
+        return res.status(404).json({ error: "Club not found" });
+    }    
+    res.json(response.rows);
+});
+
+//GET route for a single club's preseason info
+app.get("/v1/clubs/preseason/:club", async (req, res) => {
+    const club = req.params.club;
+    const response = await db.query(`SELECT * FROM preseason_data WHERE name = $1;`, [club]);
+    if (!response) {
+        return res.status(404).json({ error: "Club not found" });
+    }    
+    res.json(response.rows);
+});
 
 app.get("/v1/clubs/:club/preseason/:season", async (req, res) => {
   try {
@@ -94,9 +103,30 @@ app.get("/v1/clubs/:club/preseason/:season", async (req, res) => {
         SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
         players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
         FROM player_season_stats
-        FULL JOIN clubs ON player_season_stats.club_id = clubs.club_id
-        FULL JOIN players ON player_season_stats.player_id = players.player_id
+        JOIN clubs ON player_season_stats.club_id = clubs.club_id
+        JOIN players ON player_season_stats.player_id = players.player_id
         JOIN seasons ON player_season_stats.season_id = seasons.season_id
+        WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2;`, [clubName, season]);
+    if (!foundSeason.rows || foundSeason.rows.length === 0) {
+      return res.status(404).json({ error: "Season not found" });
+    }
+
+    res.json(foundSeason.rows);
+  } catch (error) {
+    console.error("Error fetching season:", error);
+    return res.status(500).json({ error: "An unexpected error occurred while fetching the season" });
+  }
+});
+
+app.get("/v1/clubs-countries/:club/preseason/:season", async (req, res) => {
+  try {
+    const clubName = req.params.club;
+    const season = req.params.season;
+    
+    const foundSeason = await db.query(`
+        SELECT * FROM preseason_data pd
+        JOIN clubs   ON pd.club_id   = clubs.club_id
+        JOIN seasons ON pd.season_id = seasons.season_id
         WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2;`, [clubName, season]);
     if (!foundSeason.rows || foundSeason.rows.length === 0) {
       return res.status(404).json({ error: "Season not found" });
