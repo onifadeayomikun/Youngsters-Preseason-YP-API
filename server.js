@@ -124,7 +124,7 @@ app.get("/v1/clubs-countries/:club/preseason/:season", async (req, res) => {
     const season = req.params.season;
     
     const foundSeason = await db.query(`
-        SELECT * FROM preseason_data pd
+        SELECT pd.country_code, pd.notes FROM preseason_data pd
         JOIN clubs   ON pd.club_id   = clubs.club_id
         JOIN seasons ON pd.season_id = seasons.season_id
         WHERE LOWER(clubs.name) = LOWER($1) AND seasons.season_label = $2;`, [clubName, season]);
