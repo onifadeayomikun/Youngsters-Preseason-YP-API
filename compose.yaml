@@ -2,12 +2,12 @@ services:
   api:
     build: .
     ports:
-      - "3000:3000"
+      - "4000:4000"
     env_file:
       - .env
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
+      PG_HOST: db
+      PG_PORT: 5432
     depends_on:
       db:
         condition: service_healthy
@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mikun2005
-      POSTGRES_DB: YP
+      POSTGRES_DB: yp
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
