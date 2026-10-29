@@ -21,7 +21,9 @@ app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
+app.get("/health", async (req, res) => {
+    res.json("Server is running");
+});
 
 app.get("/v1/clubs", async (req, res) => {
     const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
