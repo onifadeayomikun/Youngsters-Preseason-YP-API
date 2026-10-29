@@ -22,6 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
+
 app.get("/v1/clubs", async (req, res) => {
     const clubs = await db.query(`SELECT clubs.name, clubs.slang, clubs.country, clubs.city, clubs.seasons_available, seasons.season_label, 
     players.player_name, players.position, players.nationality, player_season_stats.age, player_season_stats.appearances
