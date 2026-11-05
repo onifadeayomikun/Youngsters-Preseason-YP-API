@@ -1,0 +1,33 @@
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+a:hover {
+  color: #7a6c6c;
+  text-decoration: none;  
+}
+.container-lead-a {
+  display: flex;
+  justify-content: space-between;
+}
+.leadTag {
+  padding: 7px;
+  border: 2px solid black;
+  border-radius: 7px;
+}
+.svgTag {
+  border: 2px solid black;
+  border-radius: 70px;
+}
+
+.letter {
+  font-size: 0.3em;
+  line-height: 1;
+  margin-left: -13px;
+}
+footer {
+    text-align: center;
+
+    margin-top: auto;
+}
