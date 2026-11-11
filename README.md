@@ -30,6 +30,14 @@ It can be used to:
 - Add clubs and players through structured endpoints
 - Manage the data through a web UI with authentication
 
+## Live app
+
+Try the hosted Preseason Tracker:
+
+**[Open Preseason Tracker](https://preseason-tracker.up.railway.app/)**
+
+The app is hosted on Railway.
+
 ## Tech stack
 
 - Node.js
