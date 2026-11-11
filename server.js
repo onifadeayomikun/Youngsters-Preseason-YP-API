@@ -1,11 +1,12 @@
 import express from "express";
 import pg from "pg";
 import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
-const port = 4000;
+const port = Number(process.env.PORT) || 4000;
 
 const db = new pg.Client({
  user: String(process.env.PG_USER ),
@@ -16,6 +17,13 @@ const db = new pg.Client({
 });
 
 db.connect();
+
+// Comma-separated list of allowed browser origins, e.g. the Tracker's URL.
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : false }));
 
 app.use(express.static('public'));
 app.use(express.json());
